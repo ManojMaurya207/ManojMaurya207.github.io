@@ -1,0 +1,21 @@
+{
+  "auth": {
+    "authorizedDomains": ["localhost", "127.0.0.1", "portfolio-3fe77.firebaseapp.com", "portfolio-3fe77.web.app"],
+    "providers": {
+      "emailPassword": true
+    }
+  },
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "storage.rules", "**/.*", "**/node_modules/**", "firebase-debug.log"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "edition": "enterprise",
+    "database": "portfolio",
+    "location": "asia-south1"
+  },
+  "storage": { "rules": "storage.rules" }
+}

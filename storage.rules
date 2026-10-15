@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isPortfolioAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'manojkumarmaurya9372@gmail.com';
+    }
+
+    // Public media is limited to assets intended to appear on the portfolio.
+    match /profile/{allPaths=**} { allow read: if true; allow write: if false; }
+    match /projects/{projectId}/{allPaths=**} { allow read: if true; allow write: if false; }
+    match /certificates/{certificateId}/{allPaths=**} { allow read: if true; allow write: if false; }
+
+    // Admin can upload image covers for blog posts; all other users are read-only.
+    match /blogs/{blogId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isPortfolioAdmin()
+        && request.resource.size <= 5242880
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+      allow delete: if isPortfolioAdmin();
+    }
+  }
+}
