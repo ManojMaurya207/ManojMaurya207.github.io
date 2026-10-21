@@ -18,3 +18,15 @@
 @media(max-width:900px){.about-body{grid-template-columns:minmax(210px,.8fr) minmax(0,1.2fr);gap:24px 32px}.about-portrait{height:390px}}
 @media(max-width:640px){.about-body{grid-template-columns:minmax(0,1fr);grid-template-areas:"portrait" "lead" "facts";gap:28px;padding-top:45px;padding-bottom:54px}.about-portrait{width:min(100%,340px);height:380px}.about-lead p:first-of-type{font-size:21px}.about-facts>div{padding:15px 0}}
 .admin-login .admin-form{margin-top:24px;gap:16px}.admin-login .admin-form label{gap:8px}.admin-login-submit{width:100%;justify-content:space-between;margin-top:2px}.admin-reset{justify-self:start;border:0;padding:2px 0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.admin-reset:hover{color:var(--brand)}.admin-reset:disabled{opacity:.55;cursor:wait}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  body.has-custom-cursor,body.has-custom-cursor a,body.has-custom-cursor button,body.has-custom-cursor [role=button],body.has-custom-cursor .project-card,body.has-custom-cursor .filter{cursor:none}
+  body.has-custom-cursor.cursor-native,body.has-custom-cursor.cursor-native *{cursor:auto!important}
+  .cursor-ring,.cursor-dot{position:fixed;top:0;left:0;z-index:9999;pointer-events:none;opacity:0}
+  .cursor-ring{width:34px;height:34px;border:1px solid color-mix(in srgb,var(--brand) 78%,transparent);border-radius:50%;background:color-mix(in srgb,var(--brand) 8%,transparent);display:grid;place-items:center;will-change:transform;transition:width .24s var(--ease),height .24s var(--ease),border-color .24s,background .24s,opacity .18s}
+  .cursor-ring.is-visible,.cursor-dot.is-visible{opacity:1}
+  .cursor-ring.is-hovering{width:52px;height:52px;border-color:var(--brand);background:color-mix(in srgb,var(--brand) 13%,transparent)}
+  .cursor-ring.is-hovering::after{content:'↗';font:10px var(--mono);color:var(--brand)}
+  .cursor-ring.is-pressed{width:25px;height:25px}
+  .cursor-ring.is-hidden,.cursor-dot.is-hidden{opacity:0}
+  .cursor-dot{width:6px;height:6px;border-radius:50%;background:var(--brand);transition:opacity .18s}
+}
