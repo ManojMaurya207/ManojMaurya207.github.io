@@ -3,6 +3,7 @@ import { collection, deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/fi
 import { execute } from 'firebase/firestore/pipelines';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { adminEmail, getFirebaseApp, getPortfolioDb } from './firebase.js';
+import { renderMarkdown, setupCodeCopy } from './markdown.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const slugify = value => value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 140);
@@ -55,7 +56,30 @@ function renderEditor() {
     <label>Excerpt<textarea name="excerpt" rows="3" maxlength="320" placeholder="A short summary for article cards">${esc(post.excerpt)}</textarea><span class="field-help">Up to 320 characters.</span></label>
     <div class="admin-cover-row"><label>Cover image<input name="coverFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><span class="field-help">Optional image, up to 5 MB. Firebase Storage must be initialized before uploads will work; use an HTTPS image URL for now.</span></label><label>Or cover image URL<input name="coverImage" type="url" maxlength="2048" value="${esc(post.coverImage)}" placeholder="https://…"></label></div>
     ${post.coverImage?`<div class="admin-cover-preview"><img src="${esc(post.coverImage)}" alt="Current article cover"><span class="field-help">Current cover image</span></div>`:''}
-    <label>Article content<textarea name="content" rows="18" required maxlength="50000" placeholder="# Start with a heading…">${esc(post.content)}</textarea><span class="field-help">Markdown supported: headings, paragraphs, lists, links, inline code, and fenced code blocks.</span></label>
+    <div class="markdown-editor-layout" data-markdown-editor>
+      <div class="markdown-tabs" role="tablist" aria-label="Article editor">
+        <button type="button" role="tab" id="markdown-write-tab" aria-controls="markdown-write-panel" aria-selected="true" class="is-active" data-markdown-tab="write">Write</button>
+        <button type="button" role="tab" id="markdown-preview-tab" aria-controls="markdown-preview-panel" aria-selected="false" data-markdown-tab="preview">Preview</button>
+      </div>
+      <div class="markdown-source" id="markdown-write-panel" role="tabpanel" aria-labelledby="markdown-write-tab" data-markdown-panel="write">
+        <div class="markdown-toolbar" role="toolbar" aria-label="Markdown formatting">
+          <button type="button" data-markdown-format="heading" title="Heading">H2</button>
+          <button type="button" data-markdown-format="bold" title="Bold"><strong>B</strong></button>
+          <button type="button" data-markdown-format="italic" title="Italic"><em>I</em></button>
+          <button type="button" data-markdown-format="link" title="Link">Link</button>
+          <button type="button" data-markdown-format="bullet" title="Bulleted list">• List</button>
+          <button type="button" data-markdown-format="numbered" title="Numbered list">1. List</button>
+          <button type="button" data-markdown-format="quote" title="Quote">Quote</button>
+          <button type="button" data-markdown-format="code" title="Code block">&lt;/&gt;</button>
+        </div>
+        <label>Article content<textarea name="content" rows="18" required maxlength="50000" placeholder="# Start with a heading…">${esc(post.content)}</textarea></label>
+        <span class="field-help">Write in Markdown. Supports headings, emphasis, links, images, lists, quotes, tables, and code blocks.</span>
+      </div>
+      <section class="markdown-preview-panel" id="markdown-preview-panel" role="tabpanel" aria-labelledby="markdown-preview-tab" data-markdown-panel="preview" hidden>
+        <div class="markdown-preview-heading"><span class="mono">PREVIEW</span><span>Rendered Markdown</span></div>
+        <article class="article-content markdown-preview" data-markdown-preview>${post.content?.trim()?renderMarkdown(post.content):'<p class="markdown-empty">Your article preview will appear here.</p>'}</article>
+      </section>
+    </div>
     <label class="admin-publish-toggle"><input name="isPublished" type="checkbox" ${post.isPublished?'checked':''}><span><strong>Published</strong><small>Published articles appear in the public writing pages. Drafts stay visible only here.</small></span></label>
     <div class="admin-form-actions"><button type="button" class="button button-plain" data-action="cancel">Cancel</button><button type="submit" class="button button-dark" ${state.busy?'disabled':''}>${state.busy?'Saving…':'Save article'} <span>↗</span></button></div>
     ${state.notice?`<div class="admin-notice" role="status">${esc(state.notice)}</div>`:''}
@@ -204,6 +228,36 @@ async function handleClick(event) {
   }
 }
 
+function applyMarkdownFormat(textarea, format) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = value.slice(start, end);
+  const pairs = { bold: ['**', '**'], italic: ['*', '*'], code: ['```\n', '\n```'] };
+
+  if (format === 'heading' || format === 'bullet' || format === 'numbered' || format === 'quote') {
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const rangeEnd = end > start && value[end - 1] === '\n' ? end - 1 : end;
+    const nextBreak = value.indexOf('\n', rangeEnd);
+    const blockEnd = nextBreak < 0 ? value.length : nextBreak;
+    const block = value.slice(lineStart, blockEnd) || 'Text to format';
+    const prefix = { heading: '## ', bullet: '- ', numbered: '1. ', quote: '> ' }[format];
+    const formatted = block.split('\n').map(line => line ? `${prefix}${line}` : line).join('\n');
+    textarea.setRangeText(formatted, lineStart, blockEnd, 'select');
+  } else if (format === 'link') {
+    const label = selected || 'link text';
+    const replacement = `[${label}](https://example.com)`;
+    textarea.setRangeText(replacement, start, end, 'select');
+  } else {
+    const [before, after] = pairs[format] || ['', ''];
+    const replacement = `${before}${selected || 'text'}${after}`;
+    textarea.setRangeText(replacement, start, end, 'select');
+  }
+
+  textarea.focus();
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 async function handleSubmit(event) {
   if (event.target.id === 'admin-login') {
     event.preventDefault();
@@ -250,9 +304,39 @@ async function handleSubmit(event) {
 
 export function mountAdmin(target) {
   root = target;
+  setupCodeCopy(root);
   if (!root.dataset.adminEvents) {
     root.dataset.adminEvents = 'true';
-    root.addEventListener('click', event => { handleClick(event); });
+    root.addEventListener('click', event => {
+      const tab = event.target.closest('[data-markdown-tab]');
+      if (tab) {
+        const editor = tab.closest('[data-markdown-editor]');
+        const name = tab.dataset.markdownTab;
+        editor?.querySelectorAll('[data-markdown-tab]').forEach(button => {
+          const selected = button === tab;
+          button.setAttribute('aria-selected', String(selected));
+          button.classList.toggle('is-active', selected);
+        });
+        editor?.querySelectorAll('[data-markdown-panel]').forEach(panel => {
+          panel.hidden = panel.dataset.markdownPanel !== name;
+        });
+        if (name === 'preview') {
+          const textarea = editor?.querySelector('[name="content"]');
+          const preview = editor?.querySelector('[data-markdown-preview]');
+          if (preview) preview.innerHTML = textarea?.value.trim()
+            ? renderMarkdown(textarea.value)
+            : '<p class="markdown-empty">Your article preview will appear here.</p>';
+        }
+        return;
+      }
+      const formatButton = event.target.closest('[data-markdown-format]');
+      if (formatButton) {
+        const textarea = root.querySelector('#blog-editor [name="content"]');
+        if (textarea) applyMarkdownFormat(textarea, formatButton.dataset.markdownFormat);
+        return;
+      }
+      handleClick(event);
+    });
     root.addEventListener('submit', event => { handleSubmit(event); });
     root.addEventListener('input', event => {
       const form = event.target.closest('#blog-editor');

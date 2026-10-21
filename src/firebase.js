@@ -39,14 +39,27 @@ export async function loadRemotePortfolio(seed) {
   try {
     const firestore = getPortfolioDb();
     const result = {};
+    let blogLoadError = '';
     const reads = collectionNames.map(async name => {
       try {
-        const snapshot = await execute(
-          firestore.pipeline().collection(name).where(field('isPublished').equal(true))
-        );
+        let snapshot;
+        // A short retry makes newly published posts resilient to transient startup/network
+        // failures, while keeping failures visible to the public blog page.
+        for (let attempt = 0; attempt < (name === 'blogs' ? 2 : 1); attempt++) {
+          try {
+            snapshot = await execute(
+              firestore.pipeline().collection(name).where(field('isPublished').equal(true))
+            );
+            break;
+          } catch (error) {
+            if (attempt === 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
         const rows = toRows(snapshot);
-        if (rows.length) result[name] = rows;
+        if (rows.length || name === 'blogs') result[name] = rows;
       } catch (error) {
+        if (name === 'blogs') blogLoadError = error?.message || 'The published posts could not be loaded.';
         console.warn(`Firebase collection “${name}” is unavailable; keeping local content.`, error);
       }
     });
@@ -72,6 +85,7 @@ export async function loadRemotePortfolio(seed) {
       }
     })());
     await Promise.all(reads);
+    result.__blogLoadError = blogLoadError;
     if (result.socialLinks) {
       result.profile = { ...(result.profile || seed.profile), socials: result.socialLinks };
       delete result.socialLinks;
