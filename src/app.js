@@ -1,12 +1,14 @@
 import { portfolioData as data } from './data.js';
-import { loadRemotePortfolio } from './firebase.js';
+import { getCachedBlogs, loadRemoteBlogs, loadRemotePortfolio } from './firebase.js';
 import { renderMarkdown, setupCodeCopy } from './markdown.js';
 import '../styles.css';
 
 const $ = (s, root=document) => root.querySelector(s);
 const app = $('#app');
 setupCodeCopy(app);
-let blogLoadStatus = 'loading';
+const cachedBlogs = getCachedBlogs();
+if (cachedBlogs) data.blogs = cachedBlogs;
+let blogLoadStatus = cachedBlogs ? 'loaded' : 'loading';
 let blogLoadError = '';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
@@ -78,5 +80,5 @@ function initCustomCursor(){
   document.addEventListener('pointerdown',()=>ring.classList.add('is-pressed'));
   document.addEventListener('pointerup',()=>ring.classList.remove('is-pressed'));
 }
-const saved=localStorage.getItem('portfolio-theme');document.documentElement.dataset.theme=saved|| (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');window.addEventListener('popstate',render);render();loadRemotePortfolio(data).then(remote=>{if(remote){blogLoadError=remote.__blogLoadError||'';blogLoadStatus=blogLoadError?'error':'loaded';delete remote.__blogLoadError;Object.assign(data,remote);if(path()!=='/admin')render()}else{blogLoadStatus='error';blogLoadError='Firebase is not configured for this site.';if(path()!=='/admin')render()}}).catch(error=>{blogLoadStatus='error';blogLoadError=error?.message||'';console.warn('Using local portfolio data because Firebase could not load.',error);if(path()!=='/admin')render()});
+const saved=localStorage.getItem('portfolio-theme');document.documentElement.dataset.theme=saved|| (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');window.addEventListener('popstate',render);render();loadRemoteBlogs(data.blogs).then(({blogs,error})=>{data.blogs=blogs;blogLoadError=error;blogLoadStatus=error?'error':'loaded';if(path()!=='/admin')render();return loadRemotePortfolio(data)}).then(remote=>{if(remote){Object.assign(data,remote);if(path()!=='/admin')render()}}).catch(error=>console.warn('Using local portfolio data because Firebase could not load.',error));
 initCustomCursor();

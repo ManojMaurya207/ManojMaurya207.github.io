@@ -5,8 +5,9 @@ import { firebaseConfig } from './firebase-config.js';
 
 const collectionNames = [
   'projects', 'experience', 'education', 'skills', 'skillCategories',
-  'achievements', 'certificates', 'workshops', 'blogs', 'socialLinks'
+  'achievements', 'certificates', 'workshops', 'socialLinks'
 ];
+const BLOG_CACHE_KEY = 'portfolio-published-blogs-v2';
 const hasConfig = () => Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 let db;
 let app;
@@ -32,6 +33,44 @@ function toRows(snapshot) {
   });
 }
 
+export function getCachedBlogs() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(BLOG_CACHE_KEY) || 'null');
+    return Array.isArray(cached) ? cached : null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheBlogs(posts) {
+  try { localStorage.setItem(BLOG_CACHE_KEY, JSON.stringify(posts)); } catch {}
+}
+
+export async function loadRemoteBlogs(seed = []) {
+  if (!hasConfig()) return { blogs: seed, error: 'Firebase is not configured for this site.' };
+  try {
+    const firestore = getPortfolioDb();
+    let snapshot;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        snapshot = await execute(
+          firestore.pipeline().collection('blogs').where(field('isPublished').equal(true))
+        );
+        break;
+      } catch (error) {
+        if (attempt === 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    const blogs = toRows(snapshot);
+    cacheBlogs(blogs);
+    return { blogs, error: '' };
+  } catch (error) {
+    console.warn('Firebase collection “blogs” is unavailable; keeping cached content.', error);
+    return { blogs: seed, error: error?.message || 'The published posts could not be loaded.' };
+  }
+}
+
 // The portfolio uses Firestore Enterprise Pipeline operations for published lists.
 // Failed or empty remote collections preserve the local seed content.
 export async function loadRemotePortfolio(seed) {
@@ -39,27 +78,14 @@ export async function loadRemotePortfolio(seed) {
   try {
     const firestore = getPortfolioDb();
     const result = {};
-    let blogLoadError = '';
     const reads = collectionNames.map(async name => {
       try {
-        let snapshot;
-        // A short retry makes newly published posts resilient to transient startup/network
-        // failures, while keeping failures visible to the public blog page.
-        for (let attempt = 0; attempt < (name === 'blogs' ? 2 : 1); attempt++) {
-          try {
-            snapshot = await execute(
-              firestore.pipeline().collection(name).where(field('isPublished').equal(true))
-            );
-            break;
-          } catch (error) {
-            if (attempt === 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
+        const snapshot = await execute(
+          firestore.pipeline().collection(name).where(field('isPublished').equal(true))
+        );
         const rows = toRows(snapshot);
-        if (rows.length || name === 'blogs') result[name] = rows;
+        if (rows.length) result[name] = rows;
       } catch (error) {
-        if (name === 'blogs') blogLoadError = error?.message || 'The published posts could not be loaded.';
         console.warn(`Firebase collection “${name}” is unavailable; keeping local content.`, error);
       }
     });
@@ -85,7 +111,6 @@ export async function loadRemotePortfolio(seed) {
       }
     })());
     await Promise.all(reads);
-    result.__blogLoadError = blogLoadError;
     if (result.socialLinks) {
       result.profile = { ...(result.profile || seed.profile), socials: result.socialLinks };
       delete result.socialLinks;
