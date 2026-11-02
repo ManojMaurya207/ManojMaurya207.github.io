@@ -3262,3 +3262,149 @@ p {
     align-self: stretch;
   }
 }
+
+/* Shared admin controls and feedback */
+.admin-page {
+  --admin-radius: 12px;
+  --admin-control-radius: 8px;
+}
+.admin-list,
+.admin-editor {
+  border-radius: var(--admin-radius);
+}
+.admin-section-head {
+  align-items: center;
+  margin-block: 19px 22px;
+}
+.admin-section-heading {
+  min-width: 0;
+}
+.admin-section-heading > .mono {
+  display: block;
+  color: var(--faint);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+.admin-section-heading h2 {
+  margin: 7px 0 0;
+  font-size: clamp(22px, 2.4vw, 27px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+}
+.admin-section-heading .admin-description {
+  margin: 8px 0 0;
+}
+.admin-section-actions {
+  flex: 0 0 auto;
+}
+.admin-section-actions > .admin-status {
+  border-radius: 999px;
+}
+.admin-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--admin-control-radius);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 62%, var(--paper));
+  font-size: 12px;
+  line-height: 1.55;
+}
+.admin-feedback.is-success {
+  border-color: color-mix(in srgb, var(--green) 30%, var(--line));
+}
+.admin-feedback.is-error {
+  border-color: color-mix(in srgb, #c65353 42%, var(--line));
+  background: color-mix(in srgb, #c65353 5%, var(--paper));
+}
+.admin-feedback .admin-retry {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.admin-form {
+  gap: 20px;
+}
+.admin-form label {
+  line-height: 1.45;
+}
+.admin-form input:not([type="checkbox"]):not([type="file"]),
+.admin-form textarea {
+  border-radius: var(--admin-control-radius);
+}
+.admin-form input:not([type="checkbox"]):not([type="file"]):focus-visible,
+.admin-form textarea:focus-visible,
+.admin-form input[type="file"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 22%, transparent);
+  outline-offset: 1px;
+}
+.admin-publish-toggle {
+  min-height: 64px;
+  border-radius: var(--admin-control-radius);
+}
+.admin-form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 4px -1px -1px;
+  padding: 13px 1px 1px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+.admin-form-actions .button,
+.admin-section-actions .button {
+  min-height: 42px;
+  border-radius: var(--admin-control-radius);
+}
+.admin-form-actions .button-plain {
+  background: var(--paper);
+}
+.admin-page button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+  transform: none;
+}
+.admin-side-link:disabled {
+  cursor: wait;
+}
+.admin-post-state .admin-quiet,
+.admin-order-controls .admin-quiet {
+  min-height: 34px;
+  border-radius: 7px;
+}
+.admin-post-state .danger-text {
+  color: color-mix(in srgb, #c65353 74%, var(--muted));
+}
+.admin-post-state .danger-text:hover {
+  color: #c65353;
+  background: color-mix(in srgb, #c65353 7%, transparent);
+}
+.admin-skeleton-list[role="status"] {
+  min-height: 190px;
+}
+@media (max-width: 800px) {
+  .admin-section-head {
+    align-items: flex-start;
+  }
+}
+@media (max-width: 560px) {
+  .admin-section-head {
+    align-items: stretch;
+  }
+  .admin-section-actions {
+    justify-content: flex-start;
+  }
+  .admin-section-actions > .button {
+    width: 100%;
+  }
+  .admin-feedback {
+    align-items: flex-start;
+  }
+  .admin-form-actions {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}

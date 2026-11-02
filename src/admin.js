@@ -27,6 +27,11 @@ import {
   saveContentRecord,
 } from "./admin-content.js";
 import { adminEmail, getFirebaseApp, getPortfolioDb } from "./firebase.js";
+import {
+  renderAdminFeedback,
+  renderAdminFormActions,
+  renderAdminSectionHeader,
+} from "./admin-ui.js";
 import { renderMarkdown, setupCodeCopy } from "./markdown.js";
 
 const esc = (value) =>
@@ -62,12 +67,18 @@ const state = {
   loadingSections: new Set(),
   busy: false,
   notice: "",
+  noticeType: "status",
   authError: "",
 };
 let root;
 const contentLoads = new Map();
 let adminSessionReady = false;
 let adminSessionRefresh;
+
+function setNotice(message = "", type = "status") {
+  state.notice = message;
+  state.noticeType = type;
+}
 
 function isOwnerAccount(user) {
   return Boolean(user?.email?.toLowerCase() === adminEmail);
@@ -138,19 +149,41 @@ function renderList() {
         ? posts
             .map(
               (post, index) =>
-                `<article class="admin-post"><div class="admin-post-main"><span class="mono">${esc(post.category || "ARTICLE")} · ${esc(formatDate(post.updatedAt))}</span><h3>${esc(post.title || "Untitled")}</h3><p>${esc(post.excerpt || "No excerpt added.")}</p></div><div class="admin-post-state"><span class="admin-status ${post.isPublished ? "is-live" : ""}">${post.isPublished ? "Published" : "Draft"}</span><div class="admin-order-controls"><button class="admin-quiet" data-action="move-blog" data-id="${esc(post.id)}" data-direction="-1" aria-label="Move ${esc(post.title || "post")} up" ${index === 0 ? "disabled" : ""}>↑</button><button class="admin-quiet" data-action="move-blog" data-id="${esc(post.id)}" data-direction="1" aria-label="Move ${esc(post.title || "post")} down" ${index === posts.length - 1 ? "disabled" : ""}>↓</button></div><button class="admin-quiet" data-action="edit" data-id="${esc(post.id)}">Edit</button><button class="admin-quiet danger-text" data-action="delete" data-id="${esc(post.id)}">Delete</button></div></article>`,
+                `<article class="admin-post"><div class="admin-post-main"><span class="mono">${esc(post.category || "ARTICLE")} · ${esc(formatDate(post.updatedAt))}</span><h3>${esc(post.title || "Untitled")}</h3><p>${esc(post.excerpt || "No excerpt added.")}</p></div><div class="admin-post-state"><span class="admin-status ${post.isPublished ? "is-live" : ""}">${post.isPublished ? "Published" : "Draft"}</span><div class="admin-order-controls"><button class="admin-quiet" data-action="move-blog" data-id="${esc(post.id)}" data-direction="-1" aria-label="Move ${esc(post.title || "post")} up" ${state.busy || index === 0 ? "disabled" : ""}>↑</button><button class="admin-quiet" data-action="move-blog" data-id="${esc(post.id)}" data-direction="1" aria-label="Move ${esc(post.title || "post")} down" ${state.busy || index === posts.length - 1 ? "disabled" : ""}>↓</button></div><button class="admin-quiet" data-action="edit" data-id="${esc(post.id)}" ${state.busy ? "disabled" : ""}>Edit</button><button class="admin-quiet danger-text" data-action="delete" data-id="${esc(post.id)}" ${state.busy ? "disabled" : ""}>Delete</button></div></article>`,
             )
             .join("")
         : `<div class="admin-empty"><span class="mono">NO ARTICLES YET</span><p>Create a post to start your writing archive.</p></div>`;
   const skeleton = `<div class="admin-skeleton-list" role="status"><span class="admin-skeleton-label">Loading your articles…</span><div class="admin-skeleton-row"></div><div class="admin-skeleton-row"></div><div class="admin-skeleton-row"></div></div>`;
-  return `<section class="admin-list"><div class="admin-section-head"><div><span class="mono">BLOG / ${state.blogsLoaded ? String(posts.length).padStart(2, "0") : "…"} ARTICLES</span><h2>Your writing</h2><p class="admin-description">Draft, publish, and organize the notes on your portfolio.</p></div><button class="button button-dark" data-action="new" ${!state.blogsLoaded ? "disabled" : ""}>New article <span>＋</span></button></div>${state.notice ? `<div class="admin-notice" role="status">${esc(state.notice)}${!state.blogsLoaded ? '<button class="admin-retry" type="button" data-action="reload-blogs">Retry</button>' : ""}</div>` : ""}${state.blogLoading ? skeleton : `<div class="admin-post-list">${list}</div>`}</section>`;
+  const header = renderAdminSectionHeader({
+    eyebrow: `BLOG / ${state.blogsLoaded ? String(posts.length).padStart(2, "0") : "…"} ARTICLES`,
+    title: "Your writing",
+    description: "Draft, publish, and organize the notes on your portfolio.",
+    actions: `<button class="button button-dark" data-action="new" ${!state.blogsLoaded || state.busy ? "disabled" : ""}>New article <span aria-hidden="true">＋</span></button>`,
+  });
+  const retryButton = `<button class="admin-retry" type="button" data-action="reload-blogs">Retry</button>`;
+  const feedback = renderAdminFeedback(state.notice, {
+    type: state.noticeType,
+    action: !state.blogsLoaded && state.notice ? retryButton : "",
+  });
+  const content = state.blogLoading
+    ? skeleton
+    : !state.blogsLoaded
+      ? ""
+      : `<div class="admin-post-list">${list}</div>`;
+  return `<section class="admin-list" aria-busy="${state.blogLoading || state.busy}">${header}${feedback}${content}</section>`;
 }
 
 function renderEditor() {
   const post = state.selected || {};
   const editing = Boolean(post.id);
   const tags = Array.isArray(post.tags) ? post.tags.join(", ") : "";
-  return `<section class="admin-editor"><div class="admin-section-head"><div><span class="mono">${editing ? "EDIT ARTICLE" : "NEW ARTICLE"}</span><h2>${editing ? esc(post.title || "Untitled") : "Draft a story"}</h2></div><button class="admin-quiet" data-action="cancel">← Back to posts</button></div><form id="blog-editor" class="admin-form">
+  const header = renderAdminSectionHeader({
+    eyebrow: editing ? "EDIT ARTICLE" : "NEW ARTICLE",
+    title: editing ? post.title || "Untitled" : "Draft a story",
+    description: "Write, preview, and publish an article for your portfolio.",
+    actions: `<button class="admin-quiet" type="button" data-admin-cancel ${state.busy ? "disabled" : ""}>← Back to posts</button>`,
+  });
+  return `<section class="admin-editor" aria-busy="${state.busy}">${header}${renderAdminFeedback(state.notice, { type: state.noticeType })}<form id="blog-editor" class="admin-form">
     <div class="admin-form-grid"><label>Title<input name="title" maxlength="120" required value="${esc(post.title)}" placeholder="A clear, useful headline"></label><label>URL slug<input name="slug" maxlength="140" required pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${esc(post.slug)}" placeholder="generated-from-title"></label></div>
     <div class="admin-form-grid"><label>Category<input name="category" maxlength="40" required value="${esc(post.category)}" placeholder="Android, Firebase, Career…"></label><label>Tags<input name="tags" value="${esc(tags)}" placeholder="Kotlin, Compose, Firebase"><span class="field-help">Separate tags with commas, up to 8.</span></label></div>
     <label>Excerpt<textarea name="excerpt" rows="3" maxlength="320" placeholder="A short summary for article cards">${esc(post.excerpt)}</textarea><span class="field-help">Up to 320 characters.</span></label>
@@ -181,8 +214,7 @@ function renderEditor() {
       </section>
     </div>
     <label class="admin-publish-toggle"><input name="isPublished" type="checkbox" ${post.isPublished ? "checked" : ""}><span><strong>Published</strong><small>Published articles appear in the public writing pages. Drafts stay visible only here.</small></span></label>
-    <div class="admin-form-actions"><button type="button" class="button button-plain" data-action="cancel">Cancel</button><button type="submit" class="button button-dark" ${state.busy ? "disabled" : ""}>${state.busy ? "Saving…" : "Save article"} <span>↗</span></button></div>
-    ${state.notice ? `<div class="admin-notice" role="status">${esc(state.notice)}</div>` : ""}
+    ${renderAdminFormActions({ submitLabel: editing ? "Save changes" : "Create article", busy: state.busy })}
   </form></section>`;
 }
 
@@ -196,12 +228,12 @@ function renderPanel() {
             const count = section.singleton
               ? ""
               : `<span class="admin-side-count">${state.loadingSections.has(section.id) ? "…" : state.loadedSections.has(section.id) ? state.content[section.id]?.length || 0 : "—"}</span>`;
-            return `<button type="button" class="admin-side-link ${state.activeSection === section.id ? "active" : ""}" data-admin-section="${esc(section.id)}" ${state.activeSection === section.id ? 'aria-current="page"' : ""}>${esc(section.label)} ${count}</button>`;
+            return `<button type="button" class="admin-side-link ${state.activeSection === section.id ? "active" : ""}" data-admin-section="${esc(section.id)}" ${state.activeSection === section.id ? 'aria-current="page"' : ""} ${state.busy ? "disabled" : ""}>${esc(section.label)} ${count}</button>`;
           })
           .join("")}</div>`,
     )
     .join("");
-  const blogNav = `<div class="admin-nav-group"><span class="mono"><span>05</span> PUBLISHING</span><button type="button" class="admin-side-link ${state.activeSection === "blog" ? "active" : ""}" data-admin-section="blog" ${state.activeSection === "blog" ? 'aria-current="page"' : ""}>Blog posts <span class="admin-side-count">${state.blogLoading ? "…" : state.blogsLoaded ? state.blogs.length : "—"}</span></button></div>`;
+  const blogNav = `<div class="admin-nav-group"><span class="mono"><span>05</span> PUBLISHING</span><button type="button" class="admin-side-link ${state.activeSection === "blog" ? "active" : ""}" data-admin-section="blog" ${state.activeSection === "blog" ? 'aria-current="page"' : ""} ${state.busy ? "disabled" : ""}>Blog posts <span class="admin-side-count">${state.blogLoading ? "…" : state.blogsLoaded ? state.blogs.length : "—"}</span></button></div>`;
   const content =
     state.activeSection === "blog"
       ? state.selected
@@ -211,7 +243,7 @@ function renderPanel() {
           ...state,
           contentLoading: state.loadingSections.has(state.activeSection),
         });
-  root.innerHTML = `<main class="admin-page"><header class="admin-top"><a class="wordmark" href="/">MM<span class="wordmark-dot">.</span></a><div class="admin-top-label"><span class="status-dot"></span><span>Portfolio workspace</span></div><div class="admin-account"><span>${esc(displayName)}</span><button class="admin-quiet" data-action="sign-out">Sign out ↗</button></div></header><div class="admin-shell"><aside class="admin-sidebar"><div class="admin-sidebar-head"><span class="mono">WORKSPACE</span><span class="admin-sidebar-private">Private</span></div>${sectionNav}${blogNav}<a class="admin-side-link admin-view-link" href="/">View portfolio <span>↗</span></a><div class="admin-sidebar-note"><span class="status-dot"></span><span>Owner access verified</span></div></aside><div class="admin-content"><div class="admin-heading"><div><span class="mono">PORTFOLIO / ADMIN</span><h1>Content desk<span class="accent-dot">.</span></h1><p>Edit and reorder content, then choose what’s published.</p></div><div class="admin-heading-card"><span class="mono">SIGNED IN AS</span><strong>${esc(state.user?.email || displayName)}</strong><span>Your portfolio content, in one place.</span></div></div>${content}</div></div></main>`;
+  root.innerHTML = `<main class="admin-page" aria-busy="${state.busy}"><header class="admin-top"><a class="wordmark" href="/">MM<span class="wordmark-dot">.</span></a><div class="admin-top-label"><span class="status-dot"></span><span>Portfolio workspace</span></div><div class="admin-account"><span>${esc(displayName)}</span><button class="admin-quiet" data-action="sign-out" ${state.busy ? "disabled" : ""}>Sign out ↗</button></div></header><div class="admin-shell"><aside class="admin-sidebar" aria-label="Portfolio admin sections"><div class="admin-sidebar-head"><span class="mono">WORKSPACE</span><span class="admin-sidebar-private">Private</span></div>${sectionNav}${blogNav}<a class="admin-side-link admin-view-link" href="/">View portfolio <span>↗</span></a><div class="admin-sidebar-note"><span class="status-dot"></span><span>Owner access verified</span></div></aside><div class="admin-content"><div class="admin-heading"><div><span class="mono">PORTFOLIO / ADMIN</span><h1>Content desk<span class="accent-dot">.</span></h1><p>Edit and reorder content, then choose what’s published.</p></div><div class="admin-heading-card"><span class="mono">SIGNED IN AS</span><strong>${esc(state.user?.email || displayName)}</strong><span>Your portfolio content, in one place.</span></div></div>${content}</div></div></main>`;
 }
 
 function render() {
@@ -227,7 +259,7 @@ function render() {
 async function loadBlogs({ force = false } = {}) {
   if (state.blogLoading || (state.blogsLoaded && !force)) return;
   state.blogLoading = true;
-  state.notice = "";
+  setNotice();
   render();
   try {
     await ensureAdminSession();
@@ -238,7 +270,7 @@ async function loadBlogs({ force = false } = {}) {
     }));
     state.blogsLoaded = true;
   } catch (error) {
-    state.notice = `Could not load blog posts: ${describeAdminError(error, "check Firebase access and deployment settings.")}`;
+    setNotice(`Could not load blog posts: ${describeAdminError(error, "check Firebase access and deployment settings.")}`, "error");
   } finally {
     state.blogLoading = false;
     render();
@@ -295,10 +327,10 @@ function retryActiveSectionWhenOnline() {
     try {
       await refreshAdminToken();
     } catch (error) {
-      state.notice = describeAdminError(
+      setNotice(describeAdminError(
         error,
         "Could not refresh the admin session.",
-      );
+      ), "error");
       render();
       return;
     }
@@ -408,17 +440,25 @@ async function savePost(form) {
     updatedAt: serverTimestamp(),
   });
   state.selected = null;
-  state.notice = "Article saved.";
   await loadBlogs({ force: true });
+  if (state.noticeType !== "error") setNotice("Article saved.", "success");
 }
 
 async function handleClick(event) {
+  if (event.target.closest("[data-admin-cancel]")) {
+    state.selected = null;
+    state.selectedContent = null;
+    setNotice();
+    render();
+    return;
+  }
+
   const sectionButton = event.target.closest("[data-admin-section]");
   if (sectionButton) {
     state.activeSection = sectionButton.dataset.adminSection;
     state.selected = null;
     state.selectedContent = null;
-    state.notice = "";
+    setNotice();
     render();
     if (state.activeSection === "blog") void loadBlogs();
     else void loadContent([state.activeSection]);
@@ -436,17 +476,18 @@ async function handleClick(event) {
   const action = button.dataset.action;
   if (action === "move-blog") {
     state.busy = true;
-    state.notice = "";
+    setNotice();
     render();
     try {
       await reorderBlogPosts(
         button.dataset.id,
         Number(button.dataset.direction),
       );
-      state.notice = "Article order updated.";
       await loadBlogs({ force: true });
+      if (state.noticeType !== "error")
+        setNotice("Article order updated.", "success");
     } catch (error) {
-      state.notice = `Could not reorder articles: ${describeAdminError(error, "please try again.")}`;
+      setNotice(`Could not reorder articles: ${describeAdminError(error, "please try again.")}`, "error");
     } finally {
       state.busy = false;
       render();
@@ -456,7 +497,7 @@ async function handleClick(event) {
       await refreshAdminToken();
       await loadBlogs({ force: true });
     } catch (error) {
-      state.notice = describeAdminError(error, "Could not reload blog posts.");
+      setNotice(describeAdminError(error, "Could not reload blog posts."), "error");
       render();
     }
   } else if (action === "resend-verification") {
@@ -534,7 +575,7 @@ async function handleClick(event) {
     state.contentErrors = {};
     state.loadedSections.clear();
     state.loadingSections.clear();
-    state.notice = "";
+    setNotice();
   } else if (action === "new") {
     state.activeSection = "blog";
     state.selectedContent = null;
@@ -548,17 +589,13 @@ async function handleClick(event) {
       tags: [],
       isPublished: false,
     };
-    state.notice = "";
+    setNotice();
     render();
   } else if (action === "edit") {
     state.activeSection = "blog";
     state.selected =
       state.blogs.find((item) => item.id === button.dataset.id) || null;
-    state.notice = "";
-    render();
-  } else if (action === "cancel") {
-    state.selected = null;
-    state.notice = "";
+    setNotice();
     render();
   } else if (action === "delete") {
     const post = state.blogs.find((item) => item.id === button.dataset.id);
@@ -572,10 +609,10 @@ async function handleClick(event) {
     try {
       await ensureAdminSession();
       await deleteDoc(doc(db, "blogs", post.id));
-      state.notice = "Article deleted.";
       await loadBlogs({ force: true });
+      if (state.noticeType !== "error") setNotice("Article deleted.", "success");
     } catch (error) {
-      state.notice = `Could not delete article: ${describeAdminError(error, "please try again.")}`;
+      setNotice(`Could not delete article: ${describeAdminError(error, "please try again.")}`, "error");
     } finally {
       state.busy = false;
       render();
@@ -600,15 +637,9 @@ async function handleContentAction(button) {
     await loadContent([sectionId], { force: true });
     return;
   }
-  if (action === "cancel") {
-    state.selectedContent = null;
-    state.notice = "";
-    render();
-    return;
-  }
   if (action === "new") {
     state.selectedContent = { section: sectionId, record: {} };
-    state.notice = "";
+    setNotice();
     render();
     return;
   }
@@ -620,13 +651,13 @@ async function handleContentAction(button) {
       ? state.content[sectionId]
       : state.content[sectionId]?.find((item) => item.id === button.dataset.id);
     state.selectedContent = { section: sectionId, record: record || {} };
-    state.notice = "";
+    setNotice();
     render();
     return;
   }
 
   state.busy = true;
-  state.notice = "";
+  setNotice();
   render();
   try {
     await ensureAdminSession();
@@ -649,7 +680,7 @@ async function handleContentAction(button) {
         return;
       }
       await deleteContentRecord(sectionId, record.id, state.content);
-      state.notice = "Entry deleted.";
+      setNotice("Entry deleted.", "success");
     } else if (action === "move") {
       await moveContentRecord(
         sectionId,
@@ -657,11 +688,11 @@ async function handleContentAction(button) {
         Number(button.dataset.direction),
         state.content,
       );
-      state.notice = "Display order updated.";
+      setNotice("Display order updated.", "success");
     }
     await loadContent([sectionId], { force: true });
   } catch (error) {
-    state.notice = `Could not update this section: ${describeAdminError(error, "please try again.")}`;
+    setNotice(`Could not update this section: ${describeAdminError(error, "please try again.")}`, "error");
   } finally {
     state.busy = false;
     render();
@@ -754,13 +785,13 @@ async function handleSubmit(event) {
     event.preventDefault();
     const form = event.target;
     state.busy = true;
-    state.notice = "";
+    setNotice();
     render();
     try {
       await ensureAdminSession();
       await saveContentRecord(form.dataset.section, form, state.content);
       state.selectedContent = null;
-      state.notice = "Portfolio content saved.";
+      setNotice("Portfolio content saved.", "success");
       await loadContent([form.dataset.section], { force: true });
     } catch (error) {
       console.error("Admin content save failed", JSON.stringify({
@@ -768,10 +799,10 @@ async function handleSubmit(event) {
         code: error?.code,
         message: error?.message,
       }));
-      state.notice = describeAdminError(
+      setNotice(describeAdminError(
         error,
         "Could not save this portfolio content.",
-      );
+      ), "error");
     } finally {
       state.busy = false;
       render();
@@ -782,7 +813,7 @@ async function handleSubmit(event) {
   event.preventDefault();
   const form = event.target;
   state.busy = true;
-  state.notice = "";
+  setNotice();
   const submit = form.querySelector('[type="submit"]');
   if (submit) {
     submit.disabled = true;
@@ -792,7 +823,7 @@ async function handleSubmit(event) {
     await ensureAdminSession();
     await savePost(form);
   } catch (error) {
-    state.notice = describeAdminError(error, "Could not save this article.");
+    setNotice(describeAdminError(error, "Could not save this article."), "error");
   } finally {
     state.busy = false;
     render();

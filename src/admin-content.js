@@ -13,6 +13,11 @@ import {
   getPortfolioDb,
   loadRemoteDocument,
 } from "./firebase.js";
+import {
+  renderAdminFeedback,
+  renderAdminFormActions,
+  renderAdminSectionHeader,
+} from "./admin-ui.js";
 import { escapeHtml as esc, slugify } from "./utils.js";
 
 const db = getPortfolioDb();
@@ -442,7 +447,13 @@ export function renderContentManager(state) {
       section.id === "settings"
         ? `<p class="admin-description">Site settings apply to the public pages when saved.</p>`
         : `<label class="admin-publish-toggle"><input type="checkbox" name="isPublished" ${record.isPublished !== false ? "checked" : ""}><span><strong>Published</strong><small>Published content appears on the public portfolio. Turn this off to keep a draft in admin.</small></span></label>`;
-    return `<section class="admin-editor"><div class="admin-section-head"><div><span class="mono">${editing ? "EDIT" : "NEW"} / ${esc(definition.title.toUpperCase())}</span><h2>${editing ? esc(recordTitle(section.id, record)) : `Add ${esc(definition.title.toLowerCase())}`}</h2></div><button class="admin-quiet" type="button" data-content-action="cancel">← Back to ${esc(definition.title.toLowerCase())}</button></div><p class="admin-description">${esc(definition.description || "Update this portfolio entry.")}</p>${state.contentErrors[section.id] ? `<div class="admin-alert" role="alert">${esc(state.contentErrors[section.id])}</div>` : ""}${state.notice ? `<div class="admin-notice" role="status">${esc(state.notice)}</div>` : ""}<form id="content-editor" class="admin-form" data-section="${esc(section.id)}" data-record-id="${esc(record.id || "")}"><div class="admin-form-grid content-form-grid">${fields}${orderField}</div>${publishToggle}<div class="admin-form-actions"><button type="button" class="button button-plain" data-content-action="cancel">Cancel</button><button type="submit" class="button button-dark" ${state.busy ? "disabled" : ""}>${state.busy ? "Saving…" : "Save changes"} <span>↗</span></button></div></form></section>`;
+    const backButton = `<button class="admin-quiet" type="button" data-admin-cancel ${state.busy ? "disabled" : ""}>← Back to ${esc(definition.title.toLowerCase())}</button>`;
+    return `<section class="admin-editor" aria-busy="${state.busy}">${renderAdminSectionHeader({
+      eyebrow: `${editing ? "EDIT" : "NEW"} / ${definition.title.toUpperCase()}`,
+      title: editing ? recordTitle(section.id, record) : `Add ${definition.title.toLowerCase()}`,
+      description: definition.description || "Update this portfolio entry.",
+      actions: backButton,
+    })}${renderAdminFeedback(state.contentErrors[section.id], { type: "error" })}${renderAdminFeedback(state.notice, { type: state.noticeType })}<form id="content-editor" class="admin-form" data-section="${esc(section.id)}" data-record-id="${esc(record.id || "")}"><div class="admin-form-grid content-form-grid">${fields}${orderField}</div>${publishToggle}${renderAdminFormActions({ submitLabel: editing ? "Save changes" : `Add ${definition.title.toLowerCase()}`, busy: state.busy })}</form></section>`;
   }
 
   const collectionList = state.contentErrors[section.id]
@@ -456,7 +467,7 @@ export function renderContentManager(state) {
               record.institution ||
               record.issuer ||
               "";
-            return `<article class="admin-post"><div class="admin-post-main"><span class="mono">${esc(secondary || definition.title.toUpperCase())} · #${String(index + 1).padStart(2, "0")}</span><h3>${esc(recordTitle(section.id, record))}</h3><p>${esc(record.summary || record.description || record.startDate || record.issuedAt || "No summary added.")}</p></div><div class="admin-post-state"><span class="admin-status ${record.isPublished !== false ? "is-live" : ""}">${record.isPublished !== false ? "Published" : "Draft"}</span><div class="admin-order-controls"><button class="admin-quiet" type="button" data-content-action="move" data-id="${esc(record.id)}" data-direction="-1" aria-label="Move ${esc(recordTitle(section.id, record))} up" ${index === 0 ? "disabled" : ""}>↑</button><button class="admin-quiet" type="button" data-content-action="move" data-id="${esc(record.id)}" data-direction="1" aria-label="Move ${esc(recordTitle(section.id, record))} down" ${index === records.length - 1 ? "disabled" : ""}>↓</button></div><button class="admin-quiet" type="button" data-content-action="edit" data-id="${esc(record.id)}">Edit</button><button class="admin-quiet danger-text" type="button" data-content-action="delete" data-id="${esc(record.id)}">Delete</button></div></article>`;
+            return `<article class="admin-post"><div class="admin-post-main"><span class="mono">${esc(secondary || definition.title.toUpperCase())} · #${String(index + 1).padStart(2, "0")}</span><h3>${esc(recordTitle(section.id, record))}</h3><p>${esc(record.summary || record.description || record.startDate || record.issuedAt || "No summary added.")}</p></div><div class="admin-post-state"><span class="admin-status ${record.isPublished !== false ? "is-live" : ""}">${record.isPublished !== false ? "Published" : "Draft"}</span><div class="admin-order-controls"><button class="admin-quiet" type="button" data-content-action="move" data-id="${esc(record.id)}" data-direction="-1" aria-label="Move ${esc(recordTitle(section.id, record))} up" ${state.busy || index === 0 ? "disabled" : ""}>↑</button><button class="admin-quiet" type="button" data-content-action="move" data-id="${esc(record.id)}" data-direction="1" aria-label="Move ${esc(recordTitle(section.id, record))} down" ${state.busy || index === records.length - 1 ? "disabled" : ""}>↓</button></div><button class="admin-quiet" type="button" data-content-action="edit" data-id="${esc(record.id)}" ${state.busy ? "disabled" : ""}>Edit</button><button class="admin-quiet danger-text" type="button" data-content-action="delete" data-id="${esc(record.id)}" ${state.busy ? "disabled" : ""}>Delete</button></div></article>`;
           })
           .join("")
       : `<div class="admin-empty"><span class="mono">NO ${esc(definition.title.toUpperCase())} YET</span><p>Add an entry when you’re ready to show it on the portfolio.</p></div>`;
@@ -464,15 +475,22 @@ export function renderContentManager(state) {
 
   const addButton = singleton
     ? ""
-    : `<button class="button button-dark" type="button" data-content-action="new" ${state.contentLoading || state.contentErrors[section.id] ? "disabled" : ""}>Add ${esc(definition.title.toLowerCase())} <span>＋</span></button>`;
+    : `<button class="button button-dark" type="button" data-content-action="new" ${state.busy || state.contentLoading || state.contentErrors[section.id] ? "disabled" : ""}>Add ${esc(definition.title.toLowerCase())} <span aria-hidden="true">＋</span></button>`;
   const singletonButton = singleton
-    ? `<button class="button button-dark" type="button" data-content-action="edit" data-id="public" ${state.contentLoading || state.contentErrors[section.id] ? "disabled" : ""}>Edit ${esc(definition.title.toLowerCase())} <span>↗</span></button>`
+    ? `<button class="button button-dark" type="button" data-content-action="edit" data-id="public" ${state.busy || state.contentLoading || state.contentErrors[section.id] ? "disabled" : ""}>Edit ${esc(definition.title.toLowerCase())} <span aria-hidden="true">↗</span></button>`
     : addButton;
   const singletonStatus = singleton
     ? `<span class="admin-status ${!state.contentLoading && !state.contentErrors[section.id] && (section.id === "settings" || records[0]?.isPublished !== false) ? "is-live" : ""}">${state.contentLoading ? "Loading" : state.contentErrors[section.id] ? "Unavailable" : section.id === "settings" ? "Site-wide" : records[0]?.isPublished === false ? "Draft" : "Published"}</span>`
     : "";
 
-  return `<section class="admin-list"><div class="admin-section-head"><div><span class="mono">${esc(definition.title.toUpperCase())} / ${state.contentLoading ? "…" : String(records.length).padStart(2, "0")}</span><h2>${esc(definition.title)}</h2><p class="admin-description">${esc(definition.description || "Edit, order, and publish this content.")}</p></div><div class="admin-section-actions">${singletonStatus}${singletonButton}</div></div>${state.contentErrors[section.id] ? `<div class="admin-alert" role="alert">${esc(state.contentErrors[section.id])}<button class="admin-retry" type="button" data-content-action="reload">Retry</button></div>` : ""}${state.notice ? `<div class="admin-notice" role="status">${esc(state.notice)}</div>` : ""}${state.contentLoading ? loadingList : `<div class="admin-post-list">${collectionList}</div>`}</section>`;
+  const retryButton = `<button class="admin-retry" type="button" data-content-action="reload">Retry</button>`;
+  const count = state.contentLoading ? "…" : String(records.length).padStart(2, "0");
+  return `<section class="admin-list" aria-busy="${state.contentLoading || state.busy}">${renderAdminSectionHeader({
+    eyebrow: `${definition.title.toUpperCase()} / ${count}`,
+    title: definition.title,
+    description: definition.description || "Edit, order, and publish this content.",
+    actions: `${singletonStatus}${singletonButton}`,
+  })}${renderAdminFeedback(state.contentErrors[section.id], { type: "error", action: state.contentErrors[section.id] ? retryButton : "" })}${renderAdminFeedback(state.notice, { type: state.noticeType })}${state.contentLoading ? loadingList : `<div class="admin-post-list">${collectionList}</div>`}</section>`;
 }
 
 function parseSocials(text) {
