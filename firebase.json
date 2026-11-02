@@ -10,12 +10,12 @@
     "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "storage.rules", "**/.*", "**/node_modules/**", "firebase-debug.log"],
     "rewrites": [{ "source": "**", "destination": "/index.html" }]
   },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json",
-    "edition": "enterprise",
-    "database": "portfolio",
-    "location": "asia-south1"
-  },
+  "firestore": [
+    {
+      "database": "portfolio",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "storage": { "rules": "storage.rules" }
 }

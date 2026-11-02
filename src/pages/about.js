@@ -3,6 +3,9 @@ import { escapeHtml as esc, published } from "../utils.js";
 
 export function aboutPage(data) {
   const skills = renderSkillGroups(data, false);
+  const skillsSection = published(data.skillCategories).length
+    ? `<section class="stack-section"><div class="wrap stack-wrap">${sectionLabel("02", "TECHNICAL TOOLKIT")}<div class="skill-wall">${skills}</div></div></section>`
+    : "";
   const education = published(data.education);
   const educationSection = education.length
     ? `<section class="section wrap">${sectionLabel("03", "EDUCATION")}<div class="education-list">${education.map((item) => `<article><span class="mono">${esc(item.startDate || "")}</span><div><h3>${esc(item.degree || item.title || "")}</h3><p>${esc(item.institution || "")}</p>${item.description ? `<p>${esc(item.description)}</p>` : ""}</div></article>`).join("")}</div></section>`
@@ -11,10 +14,10 @@ export function aboutPage(data) {
   return `<main>${pageIntro("A LITTLE ABOUT ME / 02", "Building with<br>purpose", "Mobile development is where thoughtful interfaces meet the details that make software dependable.")}
     <section class="about-body wrap">
       <div class="about-lead"><span class="mono">01 / MY APPROACH</span><p>${esc(data.profile.bio)}</p><p>I care about clear interfaces, maintainable architecture, and building for the way people actually use their devices.</p></div>
-      <figure class="about-portrait"><img src="/assets/profile-pic-cutout.png" alt="Manoj working at his laptop" loading="lazy"></figure>
-      <div class="about-facts"><div><span class="mono">FOCUS</span><strong>${esc(data.profile.role)}</strong></div><div><span class="mono">PRIMARY</span><strong>Android · Kotlin</strong></div><div><span class="mono">INTERESTS</span><strong>Mobile · AI · Computer vision</strong></div></div>
+      <figure class="about-portrait"><img src="${esc(data.profile.profileImage || "/assets/profile-pic-cutout.png")}" alt="${esc(data.profile.name)} at work" loading="lazy"></figure>
+      <div class="about-facts"><div><span class="mono">FOCUS</span><strong>${esc(data.profile.role)}</strong></div><div><span class="mono">PRIMARY</span><strong>${esc(data.profile.primary || "Android · Kotlin")}</strong></div><div><span class="mono">INTERESTS</span><strong>${esc(data.profile.interests || "Mobile · AI · Computer vision")}</strong></div></div>
     </section>
-    <section class="stack-section"><div class="wrap stack-wrap">${sectionLabel("02", "TECHNICAL TOOLKIT")}<div class="skill-wall">${skills}</div></div></section>
+    ${skillsSection}
     ${educationSection}
   </main>`;
 }
@@ -33,7 +36,7 @@ export function experiencePage(data) {
 }
 
 function renderSkillGroups(data, includeReveal = true) {
-  return data.skillCategories
+  return published(data.skillCategories)
     .map(
       (category, index) =>
         `<div class="skill-group${includeReveal ? " reveal" : ""}"><span class="mono">0${index + 1} / ${esc(category.name.toUpperCase())}</span><div>${category.items.map((tool) => `<span class="skill-chip">${esc(tool)}</span>`).join("")}</div></div>`,

@@ -1,33 +1,329 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Public portfolio collections contain intentionally public professional content.
-    // Blog documents additionally support private drafts managed from /admin.
-    function published() { return resource.data.isPublished == true; }
+    // Public portfolio records contain professional profile content. Private
+    // drafts are readable only by the verified owner account.
     function isPortfolioAdmin() {
       return request.auth != null
         && request.auth.token.email_verified == true
         && request.auth.token.email == 'manojkumarmaurya9372@gmail.com';
     }
-    function validBlogTags(tags) {
-      return tags is list && tags.size() <= 8
-        && (tags.size() < 1 || tags[0] is string)
-        && (tags.size() < 2 || tags[1] is string)
-        && (tags.size() < 3 || tags[2] is string)
-        && (tags.size() < 4 || tags[3] is string)
-        && (tags.size() < 5 || tags[4] is string)
-        && (tags.size() < 6 || tags[5] is string)
-        && (tags.size() < 7 || tags[6] is string)
-        && (tags.size() < 8 || tags[7] is string);
+
+    function isPublished() {
+      return resource.data.isPublished == true;
     }
+
+    function optionalText(data, key, maxLength) {
+      return !(key in data)
+        || (data[key] is string && data[key].size() <= maxLength);
+    }
+
+    function requiredText(data, key, maxLength) {
+      return key in data
+        && data[key] is string
+        && data[key].size() > 0
+        && data[key].size() <= maxLength;
+    }
+
+    function optionalUrl(data, key, allowLocalAsset) {
+      return !(key in data)
+        || (data[key] is string
+          && data[key].size() <= 2048
+          && (data[key] == ''
+            || data[key].matches('^https://.*')
+            || (allowLocalAsset && data[key].matches('^/assets/.*'))));
+    }
+
+    function validStringAt(items, index, maxLength) {
+      return items.size() <= index
+        || (items[index] is string && items[index].size() <= maxLength);
+    }
+
+    function validTextList(items, maxItems, maxLength) {
+      return items is list
+        && items.size() <= maxItems
+        && validStringAt(items, 0, maxLength)
+        && validStringAt(items, 1, maxLength)
+        && validStringAt(items, 2, maxLength)
+        && validStringAt(items, 3, maxLength)
+        && validStringAt(items, 4, maxLength)
+        && validStringAt(items, 5, maxLength)
+        && validStringAt(items, 6, maxLength)
+        && validStringAt(items, 7, maxLength)
+        && validStringAt(items, 8, maxLength)
+        && validStringAt(items, 9, maxLength)
+        && validStringAt(items, 10, maxLength)
+        && validStringAt(items, 11, maxLength)
+        && validStringAt(items, 12, maxLength)
+        && validStringAt(items, 13, maxLength)
+        && validStringAt(items, 14, maxLength)
+        && validStringAt(items, 15, maxLength)
+        && validStringAt(items, 16, maxLength)
+        && validStringAt(items, 17, maxLength)
+        && validStringAt(items, 18, maxLength)
+        && validStringAt(items, 19, maxLength)
+        && validStringAt(items, 20, maxLength)
+        && validStringAt(items, 21, maxLength)
+        && validStringAt(items, 22, maxLength)
+        && validStringAt(items, 23, maxLength)
+        && validStringAt(items, 24, maxLength)
+        && validStringAt(items, 25, maxLength)
+        && validStringAt(items, 26, maxLength)
+        && validStringAt(items, 27, maxLength)
+        && validStringAt(items, 28, maxLength)
+        && validStringAt(items, 29, maxLength)
+        && validStringAt(items, 30, maxLength)
+        && validStringAt(items, 31, maxLength);
+    }
+
+    function validMeta(data) {
+      return data.isPublished is bool
+        && data.order is int
+        && data.order >= 1
+        && data.order <= 10000
+        && (!('published' in data) || data.published is bool)
+        && (!('createdAt' in data) || data.createdAt is timestamp)
+        && (!('updatedAt' in data)
+          || (data.updatedAt is timestamp && data.updatedAt == request.time));
+    }
+
+    function createdAtIsCurrent(data) {
+      return data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    function createdAtIsUnchanged() {
+      return !('createdAt' in resource.data)
+        || request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    function validSocial(social) {
+      return social is map
+        && social.keys().hasOnly(['label', 'url', 'handle'])
+        && requiredText(social, 'label', 40)
+        && social.url is string
+        && social.url.size() <= 2048
+        && (social.url.matches('^https://.*') || social.url.matches('^mailto:.*'))
+        && optionalText(social, 'handle', 120);
+    }
+
+    function validSocialAt(items, index) {
+      return items.size() <= index || validSocial(items[index]);
+    }
+
+    function validSocials(items) {
+      return items is list
+        && items.size() <= 10
+        && validSocialAt(items, 0)
+        && validSocialAt(items, 1)
+        && validSocialAt(items, 2)
+        && validSocialAt(items, 3)
+        && validSocialAt(items, 4)
+        && validSocialAt(items, 5)
+        && validSocialAt(items, 6)
+        && validSocialAt(items, 7)
+        && validSocialAt(items, 8)
+        && validSocialAt(items, 9);
+    }
+
+    function validManagedSections(items) {
+      return validTextList(items, 16, 60);
+    }
+
+    function validProfile(data) {
+      return data.keys().hasAll([
+          'name', 'initials', 'role', 'location', 'currentlyBuilding', 'primary',
+          'interests', 'intro', 'bio', 'email', 'phone', 'resumeUrl', 'profileImage',
+          'socials', 'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'name', 'initials', 'role', 'location', 'currentlyBuilding', 'primary',
+          'interests', 'intro', 'bio', 'email', 'phone', 'resumeUrl', 'profileImage',
+          'socials', 'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'name', 100)
+        && requiredText(data, 'initials', 6)
+        && requiredText(data, 'role', 140)
+        && optionalText(data, 'location', 100)
+        && optionalText(data, 'currentlyBuilding', 180)
+        && optionalText(data, 'primary', 140)
+        && optionalText(data, 'interests', 180)
+        && optionalText(data, 'intro', 500)
+        && optionalText(data, 'bio', 2000)
+        && optionalText(data, 'email', 200)
+        && optionalText(data, 'phone', 40)
+        && optionalUrl(data, 'resumeUrl', true)
+        && optionalUrl(data, 'profileImage', true)
+        && validSocials(data.socials);
+    }
+
+    function validSettings(data) {
+      return data.keys().hasAll([
+          'siteTitle', 'description', 'ogImage', 'managedSections', 'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'siteTitle', 'description', 'ogImage', 'managedSections', 'isPublished',
+          'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'siteTitle', 140)
+        && optionalText(data, 'description', 320)
+        && optionalUrl(data, 'ogImage', true)
+        && validManagedSections(data.managedSections);
+    }
+
+    function validProjectLinks(links) {
+      return links is map
+        && links.keys().hasOnly([
+          'github', 'githubLabel', 'article', 'articleLabel', 'paper', 'paperLabel',
+          'research', 'researchLabel', 'live', 'liveLabel'
+        ])
+        && optionalUrl(links, 'github', false)
+        && optionalText(links, 'githubLabel', 60)
+        && optionalUrl(links, 'article', false)
+        && optionalText(links, 'articleLabel', 60)
+        && optionalUrl(links, 'paper', false)
+        && optionalText(links, 'paperLabel', 60)
+        && optionalUrl(links, 'research', false)
+        && optionalText(links, 'researchLabel', 60)
+        && optionalUrl(links, 'live', false)
+        && optionalText(links, 'liveLabel', 60);
+    }
+
+    function validProject(data) {
+      return data.keys().hasAll([
+          'title', 'slug', 'category', 'summary', 'description', 'technologies',
+          'highlights', 'featured', 'links', 'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'title', 'slug', 'category', 'summary', 'description', 'technologies',
+          'highlights', 'featured', 'links', 'coverImage', 'coverImageAlt',
+          'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'title', 120)
+        && requiredText(data, 'slug', 140)
+        && data.slug.matches('^[a-z0-9]+(-[a-z0-9]+)*$')
+        && requiredText(data, 'category', 60)
+        && optionalText(data, 'summary', 320)
+        && optionalText(data, 'description', 4000)
+        && validTextList(data.technologies, 24, 80)
+        && validTextList(data.highlights, 12, 220)
+        && data.featured is bool
+        && validProjectLinks(data.links)
+        && optionalUrl(data, 'coverImage', false)
+        && optionalText(data, 'coverImageAlt', 180);
+    }
+
+    function validExperience(data) {
+      return data.keys().hasAll([
+          'role', 'company', 'location', 'employmentType', 'startDate', 'endDate',
+          'description', 'technologies', 'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'role', 'company', 'companyUrl', 'location', 'employmentType', 'startDate',
+          'endDate', 'description', 'technologies', 'isPublished', 'published',
+          'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'role', 140)
+        && requiredText(data, 'company', 140)
+        && optionalUrl(data, 'companyUrl', false)
+        && optionalText(data, 'location', 120)
+        && optionalText(data, 'employmentType', 80)
+        && optionalText(data, 'startDate', 80)
+        && optionalText(data, 'endDate', 80)
+        && optionalText(data, 'description', 4000)
+        && validTextList(data.technologies, 24, 80);
+    }
+
+    function validEducation(data) {
+      return data.keys().hasAll([
+          'degree', 'institution', 'location', 'startDate', 'endDate', 'description',
+          'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'degree', 'institution', 'location', 'startDate', 'endDate', 'description',
+          'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'degree', 160)
+        && requiredText(data, 'institution', 200)
+        && optionalText(data, 'location', 140)
+        && optionalText(data, 'startDate', 80)
+        && optionalText(data, 'endDate', 80)
+        && optionalText(data, 'description', 1200);
+    }
+
+    function validSkillCategory(data) {
+      return data.keys().hasAll(['name', 'items', 'isPublished', 'order'])
+        && data.keys().hasOnly([
+          'name', 'items', 'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'name', 80)
+        && validTextList(data.items, 32, 80);
+    }
+
+    function validAchievement(data) {
+      return data.keys().hasAll(['title', 'organization', 'year', 'isPublished', 'order'])
+        && data.keys().hasOnly([
+          'title', 'organization', 'year', 'url', 'isPublished', 'published',
+          'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'title', 180)
+        && optionalText(data, 'organization', 180)
+        && optionalText(data, 'year', 40)
+        && optionalUrl(data, 'url', false);
+    }
+
+    function validCertificate(data) {
+      return data.keys().hasAll(['name', 'issuer', 'issuedAt', 'description', 'url', 'documentUrl', 'isPublished', 'order'])
+        && data.keys().hasOnly([
+          'name', 'issuer', 'issuedAt', 'description', 'url', 'documentUrl',
+          'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'name', 180)
+        && optionalText(data, 'issuer', 140)
+        && optionalText(data, 'issuedAt', 60)
+        && optionalText(data, 'description', 1200)
+        && optionalUrl(data, 'url', false)
+        && optionalUrl(data, 'documentUrl', false);
+    }
+
+    function validWorkshop(data) {
+      return data.keys().hasAll([
+          'title', 'organization', 'year', 'location', 'description', 'url',
+          'documentUrl', 'isPublished', 'order'
+        ])
+        && data.keys().hasOnly([
+          'title', 'organization', 'year', 'location', 'description', 'url',
+          'documentUrl', 'isPublished', 'published', 'order', 'createdAt', 'updatedAt'
+        ])
+        && validMeta(data)
+        && requiredText(data, 'title', 180)
+        && optionalText(data, 'organization', 140)
+        && optionalText(data, 'year', 40)
+        && optionalText(data, 'location', 140)
+        && optionalText(data, 'description', 1200)
+        && optionalUrl(data, 'url', false)
+        && optionalUrl(data, 'documentUrl', false);
+    }
+
+    function validBlogTags(tags) {
+      return validTextList(tags, 8, 32);
+    }
+
     function validBlog(blog) {
       return blog.keys().hasAll([
-          'title', 'slug', 'category', 'excerpt', 'content', 'coverImage',
-          'tags', 'readingTime', 'isPublished', 'order', 'createdAt', 'updatedAt'
+          'title', 'slug', 'category', 'excerpt', 'content', 'coverImage', 'tags',
+          'readingTime', 'isPublished', 'order', 'createdAt', 'updatedAt'
         ])
         && blog.keys().hasOnly([
-          'title', 'slug', 'category', 'excerpt', 'content', 'coverImage',
-          'tags', 'readingTime', 'isPublished', 'order', 'createdAt', 'updatedAt'
+          'title', 'slug', 'category', 'excerpt', 'content', 'coverImage', 'tags',
+          'readingTime', 'isPublished', 'order', 'createdAt', 'updatedAt'
         ])
         && blog.title is string && blog.title.size() > 0 && blog.title.size() <= 120
         && blog.slug is string && blog.slug.size() > 0 && blog.slug.size() <= 140
@@ -40,33 +336,90 @@ service cloud.firestore {
         && validBlogTags(blog.tags)
         && blog.readingTime is int && blog.readingTime >= 1 && blog.readingTime <= 120
         && blog.isPublished is bool
-        && blog.order is int && blog.order > 0 && blog.order <= 9007199254740991
+        && blog.order is int && blog.order >= 1 && blog.order <= 9007199254740991
         && blog.createdAt is timestamp
         && blog.updatedAt is timestamp && blog.updatedAt == request.time;
     }
 
     match /portfolio/{id} {
-      allow get: if published();
+      allow get: if isPortfolioAdmin() || isPublished();
       allow list: if false;
-      allow write: if false;
+      allow create: if isPortfolioAdmin()
+        && validProfile(request.resource.data)
+        && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin()
+        && validProfile(request.resource.data)
+        && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
     }
+
     match /settings/{id} {
-      allow get: if published();
+      allow get: if isPortfolioAdmin() || isPublished();
       allow list: if false;
-      allow write: if false;
+      allow create: if isPortfolioAdmin()
+        && validSettings(request.resource.data)
+        && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin()
+        && validSettings(request.resource.data)
+        && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
     }
-    match /projects/{id} { allow read: if published(); allow write: if false; }
-    match /experience/{id} { allow read: if published(); allow write: if false; }
-    match /education/{id} { allow read: if published(); allow write: if false; }
-    match /skills/{id} { allow read: if published(); allow write: if false; }
-    match /skillCategories/{id} { allow read: if published(); allow write: if false; }
-    match /achievements/{id} { allow read: if published(); allow write: if false; }
-    match /certificates/{id} { allow read: if published(); allow write: if false; }
-    match /workshops/{id} { allow read: if published(); allow write: if false; }
-    match /socialLinks/{id} { allow read: if published(); allow write: if false; }
+
+    match /projects/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validProject(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validProject(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /experience/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validExperience(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validExperience(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /education/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validEducation(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validEducation(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /skillCategories/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validSkillCategory(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validSkillCategory(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /achievements/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validAchievement(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validAchievement(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /certificates/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validCertificate(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validCertificate(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /workshops/{id} {
+      allow read: if isPortfolioAdmin() || isPublished();
+      allow create: if isPortfolioAdmin() && validWorkshop(request.resource.data) && createdAtIsCurrent(request.resource.data);
+      allow update: if isPortfolioAdmin() && validWorkshop(request.resource.data) && createdAtIsUnchanged();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    // Retain the other read-only public collections used by older data imports.
+    match /skills/{id} { allow read: if isPortfolioAdmin() || isPublished(); allow write: if false; }
+    match /socialLinks/{id} { allow read: if isPortfolioAdmin() || isPublished(); allow write: if false; }
 
     match /blogs/{id} {
-      allow get, list: if isPortfolioAdmin() || published();
+      allow get, list: if isPortfolioAdmin() || isPublished();
       allow create: if isPortfolioAdmin()
         && validBlog(request.resource.data)
         && request.resource.data.createdAt == request.time;

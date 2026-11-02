@@ -3,6 +3,7 @@ export const portfolioData = {
   profile: {
     name: 'Manoj Mourya', initials: 'MM', role: 'Mobile Application Developer · iOS & Android',
     location: 'Mumbai, India', currentlyBuilding: 'Mobile applications for real-world workflows',
+    primary: 'Android · Kotlin', interests: 'Mobile · AI · Computer vision',
     intro: 'Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.',
     bio: 'I’m a mobile application developer with hands-on experience building and maintaining healthcare and utility apps. I work across iOS and Android, with a focus on offline-first workflows, background processing, media handling, and reliable production software.',
     email: 'manojkumarmaurya9372@gmail.com',

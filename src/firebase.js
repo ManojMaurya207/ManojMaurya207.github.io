@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import {
+  doc as liteDoc,
+  getDoc as getLiteDoc,
+  getFirestore as getLiteFirestore,
+} from 'firebase/firestore/lite';
 import { execute, field } from 'firebase/firestore/pipelines';
 import { firebaseConfig } from './firebase-config.js';
 
@@ -10,6 +15,7 @@ const collectionNames = [
 const BLOG_CACHE_KEY = 'portfolio-published-blogs-v2';
 const hasConfig = () => Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 let db;
+let liteDb;
 let app;
 
 export const adminEmail = 'manojkumarmaurya9372@gmail.com';
@@ -25,6 +31,19 @@ function getPortfolioDb() {
 }
 
 export { getPortfolioDb };
+
+function getPortfolioLiteDb() {
+  if (!liteDb) liteDb = getLiteFirestore(getFirebaseApp(), 'portfolio');
+  return liteDb;
+}
+
+// Firestore Lite uses a direct REST request for a fixed document read, avoiding
+// the Core SDK's WebChannel transport that reports this browser as offline.
+export async function loadRemoteDocument(collectionName, documentId) {
+  const reference = liteDoc(getPortfolioLiteDb(), collectionName, documentId);
+  const snapshot = await getLiteDoc(reference);
+  return snapshot.exists() ? snapshot.data() : null;
+}
 
 function toRows(snapshot) {
   return snapshot.results.map(row => {
@@ -54,7 +73,9 @@ export async function loadRemoteBlogs(seed = []) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         snapshot = await execute(
-          firestore.pipeline().collection('blogs').where(field('isPublished').equal(true))
+          firestore.pipeline().collection('blogs')
+            .where(field('isPublished').equal(true))
+            .sort(field('order').ascending())
         );
         break;
       } catch (error) {
@@ -78,22 +99,23 @@ export async function loadRemotePortfolio(seed) {
   try {
     const firestore = getPortfolioDb();
     const result = {};
+    const collectionResults = {};
     const reads = collectionNames.map(async name => {
       try {
         const snapshot = await execute(
-          firestore.pipeline().collection(name).where(field('isPublished').equal(true))
+          firestore.pipeline().collection(name)
+            .where(field('isPublished').equal(true))
+            .sort(field('order').ascending())
         );
-        const rows = toRows(snapshot);
-        if (rows.length) result[name] = rows;
+        collectionResults[name] = toRows(snapshot);
       } catch (error) {
         console.warn(`Firebase collection “${name}” is unavailable; keeping local content.`, error);
       }
     });
     reads.push((async () => {
       try {
-        const snapshot = await getDoc(doc(firestore, 'portfolio', 'public'));
-        if (snapshot.exists() && snapshot.data().isPublished === true) {
-          const profile = snapshot.data();
+        const profile = await loadRemoteDocument('portfolio', 'public');
+        if (profile?.isPublished === true) {
           result.profile = { ...seed.profile, ...profile, profileImage: profile.profileImage || seed.profile.profileImage };
         }
       } catch (error) {
@@ -102,15 +124,38 @@ export async function loadRemotePortfolio(seed) {
     })());
     reads.push((async () => {
       try {
-        const snapshot = await getDoc(doc(firestore, 'settings', 'public'));
-        if (snapshot.exists() && snapshot.data().isPublished === true) {
-          result.settings = { ...seed.settings, ...snapshot.data() };
+        const settings = await loadRemoteDocument('settings', 'public');
+        if (settings?.isPublished === true) {
+          result.settings = { ...seed.settings, ...settings };
         }
       } catch (error) {
         console.warn('Firebase settings are unavailable; keeping local content.', error);
       }
     })());
     await Promise.all(reads);
+    const managedSections = result.settings?.managedSections || [];
+    for (const name of collectionNames) {
+      const rows = collectionResults[name];
+      if (rows !== undefined && (rows.length || managedSections.includes(name))) {
+        result[name] = rows;
+      }
+    }
+    if (managedSections.includes('profile') && !result.profile) {
+      result.profile = {
+        ...seed.profile,
+        name: '',
+        initials: '',
+        role: '',
+        location: '',
+        currentlyBuilding: '',
+        intro: '',
+        bio: '',
+        email: '',
+        resumeUrl: '',
+        profileImage: '',
+        socials: []
+      };
+    }
     if (result.socialLinks) {
       result.profile = { ...(result.profile || seed.profile), socials: result.socialLinks };
       delete result.socialLinks;

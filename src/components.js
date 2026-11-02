@@ -21,7 +21,7 @@ export function header(data, currentPath) {
     return `<a href="${href}" class="${active ? "is-active" : ""}"${active ? ' aria-current="page"' : ""}>${number}${mobile ? " &nbsp; " : ` <span>${label}</span>`}${mobile ? label : ""}</a>`;
   };
 
-  return `<header class="site-header"><a class="wordmark" href="/" aria-label="Manoj Mourya home">${esc(data.profile.initials)}<span class="wordmark-dot">.</span></a><nav class="desktop-nav" aria-label="Main navigation">${items.map((item) => navItem(item)).join("")}</nav><div class="header-actions"><button class="theme-toggle" aria-label="Toggle color theme" title="Toggle theme"><span>◐</span></button><button class="menu-toggle" aria-expanded="false" aria-label="Open menu"><i></i><i></i></button></div><nav class="mobile-nav" aria-label="Mobile navigation">${items.map((item) => navItem(item, true)).join("")}</nav></header>`;
+  return `<header class="site-header"><a class="wordmark" href="/" aria-label="${esc(data.profile.name)} home">${esc(data.profile.initials)}<span class="wordmark-dot">.</span></a><nav class="desktop-nav" aria-label="Main navigation">${items.map((item) => navItem(item)).join("")}</nav><div class="header-actions"><button class="theme-toggle" aria-label="Toggle color theme" title="Toggle theme"><span>◐</span></button><button class="menu-toggle" aria-expanded="false" aria-label="Open menu"><i></i><i></i></button></div><nav class="mobile-nav" aria-label="Mobile navigation">${items.map((item) => navItem(item, true)).join("")}</nav></header>`;
 }
 
 export function footer(data) {

@@ -7,17 +7,45 @@ service firebase.storage {
         && request.auth.token.email == 'manojkumarmaurya9372@gmail.com';
     }
 
-    // Public media is limited to assets intended to appear on the portfolio.
-    match /profile/{allPaths=**} { allow read: if true; allow write: if false; }
-    match /projects/{projectId}/{allPaths=**} { allow read: if true; allow write: if false; }
-    match /certificates/{certificateId}/{allPaths=**} { allow read: if true; allow write: if false; }
+    function imageUpload(maxBytes) {
+      return request.resource != null
+        && request.resource.size <= maxBytes
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
 
-    // Admin can upload image covers for blog posts; all other users are read-only.
-    match /blogs/{blogId}/{fileName} {
+    function certificateFileUpload() {
+      return request.resource != null
+        && request.resource.size <= 15728640
+        && (request.resource.contentType == 'application/pdf'
+          || request.resource.contentType.matches('image/(jpeg|png|webp)'));
+    }
+
+    // These assets are intentionally public. Only the verified portfolio
+    // owner can replace or remove them.
+    match /profile/{fileName} {
       allow read: if true;
       allow create, update: if isPortfolioAdmin()
-        && request.resource.size <= 5242880
-        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+        && (imageUpload(8388608)
+          || (request.resource.size <= 15728640
+            && request.resource.contentType == 'application/pdf'));
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /projects/{projectId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isPortfolioAdmin() && imageUpload(8388608);
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /certificates/{entryId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isPortfolioAdmin() && certificateFileUpload();
+      allow delete: if isPortfolioAdmin();
+    }
+
+    match /blogs/{blogId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isPortfolioAdmin() && imageUpload(5242880);
       allow delete: if isPortfolioAdmin();
     }
   }

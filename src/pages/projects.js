@@ -64,14 +64,24 @@ export function certificatesPage(data) {
   const workshops = published(data.workshops);
   const certificateCards = certificates
     .map(
-      (certificate) =>
-        `<article class="credential"><span class="mono">${esc(certificate.issuedAt || certificate.year || "CERTIFICATE")}</span><h3>${esc(certificate.name || certificate.title || "")}</h3><p>${esc(certificate.issuer || "")}</p>${certificate.url ? `<a class="text-link" href="${esc(certificate.url)}" target="_blank">View credential ↗</a>` : ""}</article>`,
+      (certificate) => {
+        const links = [
+          certificate.url && `<a class="text-link" href="${esc(certificate.url)}" target="_blank" rel="noreferrer">View credential ↗</a>`,
+          certificate.documentUrl && `<a class="text-link" href="${esc(certificate.documentUrl)}" target="_blank" rel="noreferrer">Open certificate file ↗</a>`,
+        ].filter(Boolean).join("");
+        return `<article class="credential"><span class="mono">${esc(certificate.issuedAt || certificate.year || "CERTIFICATE")}</span><h3>${esc(certificate.name || certificate.title || "")}</h3><p>${esc(certificate.issuer || "")}</p>${links}</article>`;
+      },
     )
     .join("");
   const workshopCards = workshops
     .map(
-      (workshop) =>
-        `<article class="achievement"><span class="mono">${esc(workshop.year || "EVENT")}</span><h3>${esc(workshop.title || workshop.name || "")}</h3>${workshop.organization ? `<p>${esc(workshop.organization)}</p>` : ""}</article>`,
+      (workshop) => {
+        const links = [
+          workshop.url && `<a class="text-link" href="${esc(workshop.url)}" target="_blank" rel="noreferrer">Event details ↗</a>`,
+          workshop.documentUrl && `<a class="text-link" href="${esc(workshop.documentUrl)}" target="_blank" rel="noreferrer">Open related file ↗</a>`,
+        ].filter(Boolean).join("");
+        return `<article class="achievement"><span class="mono">${esc(workshop.year || "EVENT")}</span><h3>${esc(workshop.title || workshop.name || "")}</h3>${workshop.organization ? `<p>${esc(workshop.organization)}</p>` : ""}${links}</article>`;
+      },
     )
     .join("");
   const emptyMessage =

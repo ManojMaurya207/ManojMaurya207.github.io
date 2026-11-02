@@ -43,7 +43,7 @@ export function homePage(data) {
 
 function renderHero(data, socials) {
   const portrait = data.profile.profileImage
-    ? `<img class="portrait-photo" src="${esc(data.profile.profileImage)}" alt="Manoj Mourya in his workspace" fetchpriority="high">`
+    ? `<img class="portrait-photo" src="${esc(data.profile.profileImage)}" alt="${esc(data.profile.name)} in their workspace" fetchpriority="high">`
     : `<div class="portrait-grid"></div><div class="portrait-monogram">${esc(data.profile.initials)}</div><span class="portrait-note">ANDROID · MOBILE · PRODUCT</span><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>`;
   const resumeLink = data.profile.resumeUrl
     ? `<a class="button button-plain" href="${esc(data.profile.resumeUrl)}" target="_blank">Résumé ${arrow}</a>`
@@ -70,7 +70,10 @@ function renderIntro(data) {
 }
 
 function renderSkills(data) {
-  return `<section class="stack-section"><div class="wrap stack-wrap">${sectionLabel("02", "TOOLS OF THE TRADE")}<div class="section-heading"><h2>My everyday<br>toolkit<span class="accent-dot">.</span></h2><p>A practical set of tools for designing, building, and shipping mobile software.</p></div><div class="skill-wall">${data.skillCategories.map((category, index) => `<div class="skill-group reveal"><span class="mono">0${index + 1} / ${esc(category.name.toUpperCase())}</span><div>${category.items.map((tool) => `<span class="skill-chip">${esc(tool)}</span>`).join("")}</div></div>`).join("")}</div></div></section>`;
+  const categories = published(data.skillCategories);
+  if (!categories.length) return "";
+
+  return `<section class="stack-section"><div class="wrap stack-wrap">${sectionLabel("02", "TOOLS OF THE TRADE")}<div class="section-heading"><h2>My everyday<br>toolkit<span class="accent-dot">.</span></h2><p>A practical set of tools for designing, building, and shipping mobile software.</p></div><div class="skill-wall">${categories.map((category, index) => `<div class="skill-group reveal"><span class="mono">0${index + 1} / ${esc(category.name.toUpperCase())}</span><div>${category.items.map((tool) => `<span class="skill-chip">${esc(tool)}</span>`).join("")}</div></div>`).join("")}</div></div></section>`;
 }
 
 function renderAchievements(data) {

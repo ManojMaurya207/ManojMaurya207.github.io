@@ -43,6 +43,15 @@ function render() {
   app.innerHTML =
     header(portfolioData, route) + page.content + footer(portfolioData);
   document.title = page.title || portfolioData.settings.siteTitle;
+  const description = document.querySelector('meta[name="description"]');
+  if (description) description.content = portfolioData.settings.description || "";
+  let shareImage = document.querySelector('meta[property="og:image"]');
+  if (!shareImage) {
+    shareImage = document.createElement("meta");
+    shareImage.setAttribute("property", "og:image");
+    document.head.append(shareImage);
+  }
+  shareImage.content = portfolioData.settings.ogImage || "";
   bindPageInteractions({ data: portfolioData, render });
 }
 
@@ -108,6 +117,8 @@ function applySavedTheme() {
 }
 
 async function loadContent() {
+  if (getPath() === "/admin") return;
+
   try {
     const { blogs, error } = await loadRemoteBlogs(portfolioData.blogs);
     portfolioData.blogs = blogs;
