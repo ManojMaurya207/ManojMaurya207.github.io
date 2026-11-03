@@ -11,6 +11,35 @@ npm run dev
 
 Create a production build with `npm run build`. Firebase Hosting serves the generated `dist` directory.
 
+## Source structure
+
+The site uses Vite and native JavaScript modules. Page templates return HTML strings, while the application entry point owns rendering, browser events, and remote data hydration.
+
+```text
+src/
+├── app.js                 # Application startup, theme, data loading, page lifecycle
+├── router.js              # Route matching and page metadata
+├── components.js          # Shared site shell and reusable portfolio sections
+├── pages/                 # Home, about, projects, blog, contact, experience templates
+├── admin.js               # Admin authentication, state, and event coordination
+├── admin/
+│   ├── blog-store.js      # Blog Firestore reads and writes
+│   ├── content-schema.js  # Admin navigation and editable field definitions
+│   ├── content-store.js   # Portfolio content validation, uploads, and Firestore writes
+│   ├── content-view.js   # Portfolio content list and editor templates
+│   ├── ui.js             # Shared admin headers, feedback, and form actions
+│   ├── views.js           # Admin login, dashboard, and blog templates
+│   └── markdown-editor.js # Markdown formatting actions
+├── firebase.js            # Firebase initialization and public content reads
+├── data.js                # Local seed content and defaults
+├── interactions.js        # Site interactions and custom cursor
+├── markdown.js            # Markdown rendering and code highlighting
+├── project-artwork.js     # Project thumbnail artwork
+└── utils.js               # Shared formatting and data helpers
+```
+
+`router.js` selects a page without owning app state. The admin controller coordinates authentication and UI state; `admin/content-schema.js` defines editable fields, `admin/content-view.js` renders them, and the store modules handle persistence. Existing Firestore collections and document fields remain unchanged.
+
 ## Firebase project
 
 This workspace is connected to the existing `portfolio-3fe77` project and its Enterprise Native Firestore database named `portfolio` in Mumbai (`asia-south1`). The Firebase Web app configuration is in `src/firebase-config.js`; it is public client configuration, while Firestore and Storage Security Rules control data access.

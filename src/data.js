@@ -1,47 +1,327 @@
 // Public portfolio content. Keep presentation in app.js and replace this source with Firestore reads.
 export const portfolioData = {
   profile: {
-    name: 'Manoj Mourya', initials: 'MM', role: 'Mobile Application Developer · iOS & Android',
-    location: 'Mumbai, India', currentlyBuilding: 'Mobile applications for real-world workflows',
-    primary: 'Android · Kotlin', interests: 'Mobile · AI · Computer vision',
-    intro: 'Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.',
-    bio: 'I’m a mobile application developer with hands-on experience building and maintaining healthcare and utility apps. I work across iOS and Android, with a focus on offline-first workflows, background processing, media handling, and reliable production software.',
-    email: 'manojkumarmaurya9372@gmail.com',
-    resumeUrl: '/assets/Manoj-Mourya-Resume.pdf', profileImage: '/assets/profile-pic.png',
+    name: "Manoj Mourya",
+    initials: "MM",
+    role: "Mobile Application Developer · iOS & Android",
+    location: "Mumbai, India",
+    currentlyBuilding: "Mobile applications for real-world workflows",
+    primary: "Android · Kotlin",
+    interests: "Mobile · AI · Computer vision",
+    intro:
+      "Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.",
+    bio: "I’m a mobile application developer with hands-on experience building and maintaining healthcare and utility apps. I work across iOS and Android, with a focus on offline-first workflows, background processing, media handling, and reliable production software.",
+    email: "manojkumarmaurya9372@gmail.com",
+    resumeUrl: "/assets/Manoj-Mourya-Resume.pdf",
+    profileImage: "/assets/profile-pic.png",
     socials: [
-      { label: 'GitHub', url: 'https://github.com/ManojMaurya207', handle: 'ManojMaurya207' },
-      { label: 'LinkedIn', url: 'https://www.linkedin.com/in/manoj-maurya', handle: 'Professional profile' },
-      { label: 'Email', url: 'mailto:manojkumarmaurya9372@gmail.com', handle: 'manojkumarmaurya9372@gmail.com' }
-    ]
+      {
+        label: "GitHub",
+        url: "https://github.com/ManojMaurya207",
+        handle: "ManojMaurya207",
+      },
+      {
+        label: "LinkedIn",
+        url: "https://www.linkedin.com/in/manoj-maurya",
+        handle: "Professional profile",
+      },
+      {
+        label: "Email",
+        url: "mailto:manojkumarmaurya9372@gmail.com",
+        handle: "manojkumarmaurya9372@gmail.com",
+      },
+    ],
   },
   projects: [
-    { title: 'Cilika Retic', slug: 'cilika-retic', category: 'iOS · Healthcare', summary: 'A production healthcare app in the Cilika ecosystem, with background workflows for medical image analysis involving reticulocyte and RBC detection.', description: 'Built background processing workflows for medical image analysis and optimized task execution for long-running image-processing operations. Contributed to stable offline workflows used in clinical diagnostic environments.', technologies: ['SwiftUI', 'Background Tasks', 'Image Processing'], highlights: ['Background processing for medical image analysis', 'Long-running task execution', 'Offline workflows for clinical diagnostic environments'], featured: true, published: true, links: { live: 'https://apps.apple.com/us/app/cilika-reticulocyte/id6755103616', liveLabel: 'View on App Store' } },
-    { title: 'StealthShield', slug: 'stealthshield', category: 'Android · Safety', summary: 'An Android theft-protection app with fake shutdown, live location tracking, safe-zone geofencing, and SOS alerts.', description: 'StealthShield helps protect a phone and supports recovery if it is lost or stolen. The app combines a simulated shutdown flow, real-time location tracking, configurable safe zones, and SMS alerts for emergency contacts.', technologies: ['Kotlin', 'Jetpack Compose', 'Firebase Authentication', 'Cloud Firestore', 'Google Maps SDK', 'Geocoding API', 'Places API', 'Lottie', 'Coil', 'Accompanist Navigation'], highlights: ['Fake shutdown flow with background protection', 'Location updates and customizable geofences', 'SOS alerts with location for emergency contacts'], featured: true, published: true, links: { github: 'https://github.com/ManojMaurya207/StealthShield' } },
-    { title: 'Signify', slug: 'signify', category: 'Android · Accessibility', summary: 'An inclusive Android app for learning sign language and translating hand gestures into text in real time.', description: 'Signify combines camera-based gesture recognition with learning content to make sign language more approachable. It supports real-time sign-to-text translation, typed text with visual sign representations, speech output, video lessons, and interactive articles.', technologies: ['Kotlin', 'Jetpack Compose', 'Material Design 3', 'CameraX', 'MediaPipe HandLandmarker', 'Firebase Authentication', 'Cloud Firestore', 'Text-to-Speech'], highlights: ['Real-time sign-to-text gesture translation', 'Typed text with visual sign representations and speech output', 'Video lessons and interactive learning articles'], featured: true, published: true, links: { github: 'https://github.com/ManojMaurya207/Signify-Android' } },
-    { title: 'EduTrack', slug: 'edutrack', category: 'Python · Education', summary: 'A Python school-management app with a graphical interface for student and teacher administration.', description: 'EduTrack is a Python GUI application for school administration. It brings together admissions and removals, attendance tracking, student complaints, teacher grade entry and result calculation, and sharing subject notes with students.', technologies: ['Python', 'Graphical User Interface'], highlights: ['Student and teacher admission and removal', 'Attendance, grading, and result calculation', 'Student complaints and subject notes management'], featured: false, published: true, links: { github: 'https://github.com/ManojMaurya207/EduTrack' } },
-    { title: 'Digit Recognizer', slug: 'digit-recognizer', category: 'Python · Machine Learning', summary: 'A NumPy neural network built from scratch to recognize handwritten digits from MNIST.', description: 'This educational project implements a two-layer neural network without TensorFlow or PyTorch. It preprocesses 28×28 MNIST images, uses ReLU in the hidden layer and softmax for digit predictions, then trains through forward propagation, cross-entropy loss, backpropagation, and gradient descent.', technologies: ['Python', 'NumPy', 'Pandas', 'Matplotlib', 'MNIST'], highlights: ['Neural network implemented without ML frameworks', '784-input, 10-unit hidden layer, and 10 digit outputs', 'Forward propagation, backpropagation, and gradient descent'], featured: false, published: true, links: { github: 'https://github.com/ManojMaurya207/Digit_Recognizer' } },
-    { title: 'DivyaDrishti', slug: 'divyadrishti', category: 'Research · Publication', summary: 'A research paper published in a competition: “DivyaDrishti: See beyond the vision.”', description: 'DivyaDrishti is a published research paper presented through a competition. Read the paper and its publication details on ResearchGate.', technologies: ['Research', 'Accessibility'], highlights: ['Research paper published in a competition', 'Publication available on ResearchGate'], featured: false, published: true, links: { paper: 'https://www.researchgate.net/publication/381800889_DivyaDrishti_See_beyond_the_vision' } },
-    { title: 'GemInSky', slug: 'geminsky', category: 'Android · Weather & AI', summary: 'A Jetpack Compose weather app with live forecasts, saved cities, and a context-aware Gemini assistant.', description: 'GemInSky pairs real-time WeatherAPI data with a polished Android experience. It includes saved-city forecasts, pull-to-refresh with shimmer loading, dark mode, animated navigation, and a Gemini-powered assistant that remembers weather context and responds when asked.', technologies: ['Kotlin', 'Jetpack Compose', 'WeatherAPI', 'Gemini AI', 'Retrofit', 'DataStore', 'MVVM', 'Coil'], highlights: ['Live forecasts for saved cities with pull-to-refresh', 'Context-aware Gemini assistant', 'Persistent city pager, dark mode, and animated navigation'], featured: false, published: true, links: { github: 'https://github.com/ManojMaurya207/GemInSky' } },
-    { title: 'PACMAN 3D — Science Mela', slug: 'pacman-3d-sci-mela', category: 'Unity · Game', summary: 'A 3D Pac-Man game built with two teammates for a college Science Mela.', description: 'A Unity game that brings classic Pac-Man gameplay into a 3D maze. Navigate the maze, collect pellets, avoid ghosts, and track your score and personal best. Built as a collaborative project for a college Science Mela.', technologies: ['Unity', 'C#', '3D Game Development'], highlights: ['3D maze with pellet collection and ghost avoidance', 'Score and personal-best tracking', 'Made collaboratively for a college Science Mela'], featured: false, published: true, links: { github: 'https://github.com/ManojMaurya207/PACMAN-3D-sci_mela' } },
-    { title: 'Dino 3D', slug: 'dino-3d', category: 'Unity · Game', summary: 'A 3D endless runner inspired by the Chrome dinosaur game.', description: 'A Unity endless runner where players guide a dinosaur through a 3D environment, jumping over cacti, rocks, and other obstacles while chasing a high score.', technologies: ['Unity', 'C#', '3D Game Development'], highlights: ['Endless-runner gameplay in a 3D environment', 'Obstacle dodging and jumping', 'High-score tracking'], featured: false, published: true, links: { github: 'https://github.com/ManojMaurya207/Dino-3D' } }
+    {
+      title: "Cilika Retic",
+      slug: "cilika-retic",
+      category: "iOS · Healthcare",
+      summary:
+        "A production healthcare app in the Cilika ecosystem, with background workflows for medical image analysis involving reticulocyte and RBC detection.",
+      description:
+        "Built background processing workflows for medical image analysis and optimized task execution for long-running image-processing operations. Contributed to stable offline workflows used in clinical diagnostic environments.",
+      technologies: ["SwiftUI", "Background Tasks", "Image Processing"],
+      highlights: [
+        "Background processing for medical image analysis",
+        "Long-running task execution",
+        "Offline workflows for clinical diagnostic environments",
+      ],
+      featured: true,
+      published: true,
+      links: {
+        live: "https://apps.apple.com/us/app/cilika-reticulocyte/id6755103616",
+        liveLabel: "View on App Store",
+      },
+    },
+    {
+      title: "StealthShield",
+      slug: "stealthshield",
+      category: "Android · Safety",
+      summary:
+        "An Android theft-protection app with fake shutdown, live location tracking, safe-zone geofencing, and SOS alerts.",
+      description:
+        "StealthShield helps protect a phone and supports recovery if it is lost or stolen. The app combines a simulated shutdown flow, real-time location tracking, configurable safe zones, and SMS alerts for emergency contacts.",
+      technologies: [
+        "Kotlin",
+        "Jetpack Compose",
+        "Firebase Authentication",
+        "Cloud Firestore",
+        "Google Maps SDK",
+        "Geocoding API",
+        "Places API",
+        "Lottie",
+        "Coil",
+        "Accompanist Navigation",
+      ],
+      highlights: [
+        "Fake shutdown flow with background protection",
+        "Location updates and customizable geofences",
+        "SOS alerts with location for emergency contacts",
+      ],
+      featured: true,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/StealthShield" },
+    },
+    {
+      title: "Signify",
+      slug: "signify",
+      category: "Android · Accessibility",
+      summary:
+        "An inclusive Android app for learning sign language and translating hand gestures into text in real time.",
+      description:
+        "Signify combines camera-based gesture recognition with learning content to make sign language more approachable. It supports real-time sign-to-text translation, typed text with visual sign representations, speech output, video lessons, and interactive articles.",
+      technologies: [
+        "Kotlin",
+        "Jetpack Compose",
+        "Material Design 3",
+        "CameraX",
+        "MediaPipe HandLandmarker",
+        "Firebase Authentication",
+        "Cloud Firestore",
+        "Text-to-Speech",
+      ],
+      highlights: [
+        "Real-time sign-to-text gesture translation",
+        "Typed text with visual sign representations and speech output",
+        "Video lessons and interactive learning articles",
+      ],
+      featured: true,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/Signify-Android" },
+    },
+    {
+      title: "EduTrack",
+      slug: "edutrack",
+      category: "Python · Education",
+      summary:
+        "A Python school-management app with a graphical interface for student and teacher administration.",
+      description:
+        "EduTrack is a Python GUI application for school administration. It brings together admissions and removals, attendance tracking, student complaints, teacher grade entry and result calculation, and sharing subject notes with students.",
+      technologies: ["Python", "Graphical User Interface"],
+      highlights: [
+        "Student and teacher admission and removal",
+        "Attendance, grading, and result calculation",
+        "Student complaints and subject notes management",
+      ],
+      featured: false,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/EduTrack" },
+    },
+    {
+      title: "Digit Recognizer",
+      slug: "digit-recognizer",
+      category: "Python · Machine Learning",
+      summary:
+        "A NumPy neural network built from scratch to recognize handwritten digits from MNIST.",
+      description:
+        "This educational project implements a two-layer neural network without TensorFlow or PyTorch. It preprocesses 28×28 MNIST images, uses ReLU in the hidden layer and softmax for digit predictions, then trains through forward propagation, cross-entropy loss, backpropagation, and gradient descent.",
+      technologies: ["Python", "NumPy", "Pandas", "Matplotlib", "MNIST"],
+      highlights: [
+        "Neural network implemented without ML frameworks",
+        "784-input, 10-unit hidden layer, and 10 digit outputs",
+        "Forward propagation, backpropagation, and gradient descent",
+      ],
+      featured: false,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/Digit_Recognizer" },
+    },
+    {
+      title: "DivyaDrishti",
+      slug: "divyadrishti",
+      category: "Research · Publication",
+      summary:
+        "A research paper published in a competition: “DivyaDrishti: See beyond the vision.”",
+      description:
+        "DivyaDrishti is a published research paper presented through a competition. Read the paper and its publication details on ResearchGate.",
+      technologies: ["Research", "Accessibility"],
+      highlights: [
+        "Research paper published in a competition",
+        "Publication available on ResearchGate",
+      ],
+      featured: false,
+      published: true,
+      links: {
+        paper:
+          "https://www.researchgate.net/publication/381800889_DivyaDrishti_See_beyond_the_vision",
+      },
+    },
+    {
+      title: "GemInSky",
+      slug: "geminsky",
+      category: "Android · Weather & AI",
+      summary:
+        "A Jetpack Compose weather app with live forecasts, saved cities, and a context-aware Gemini assistant.",
+      description:
+        "GemInSky pairs real-time WeatherAPI data with a polished Android experience. It includes saved-city forecasts, pull-to-refresh with shimmer loading, dark mode, animated navigation, and a Gemini-powered assistant that remembers weather context and responds when asked.",
+      technologies: [
+        "Kotlin",
+        "Jetpack Compose",
+        "WeatherAPI",
+        "Gemini AI",
+        "Retrofit",
+        "DataStore",
+        "MVVM",
+        "Coil",
+      ],
+      highlights: [
+        "Live forecasts for saved cities with pull-to-refresh",
+        "Context-aware Gemini assistant",
+        "Persistent city pager, dark mode, and animated navigation",
+      ],
+      featured: false,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/GemInSky" },
+    },
+    {
+      title: "PACMAN 3D — Science Mela",
+      slug: "pacman-3d-sci-mela",
+      category: "Unity · Game",
+      summary:
+        "A 3D Pac-Man game built with two teammates for a college Science Mela.",
+      description:
+        "A Unity game that brings classic Pac-Man gameplay into a 3D maze. Navigate the maze, collect pellets, avoid ghosts, and track your score and personal best. Built as a collaborative project for a college Science Mela.",
+      technologies: ["Unity", "C#", "3D Game Development"],
+      highlights: [
+        "3D maze with pellet collection and ghost avoidance",
+        "Score and personal-best tracking",
+        "Made collaboratively for a college Science Mela",
+      ],
+      featured: false,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/PACMAN-3D-sci_mela" },
+    },
+    {
+      title: "Dino 3D",
+      slug: "dino-3d",
+      category: "Unity · Game",
+      summary: "A 3D endless runner inspired by the Chrome dinosaur game.",
+      description:
+        "A Unity endless runner where players guide a dinosaur through a 3D environment, jumping over cacti, rocks, and other obstacles while chasing a high score.",
+      technologies: ["Unity", "C#", "3D Game Development"],
+      highlights: [
+        "Endless-runner gameplay in a 3D environment",
+        "Obstacle dodging and jumping",
+        "High-score tracking",
+      ],
+      featured: false,
+      published: true,
+      links: { github: "https://github.com/ManojMaurya207/Dino-3D" },
+    },
   ],
   skillCategories: [
-    { name: 'iOS', items: ['Swift', 'SwiftUI', 'State Management', 'Background Tasks', 'Navigation', 'Media Handling', 'Xcode'] },
-    { name: 'Android', items: ['Kotlin', 'Java', 'Jetpack Compose', 'XML', 'MVVM', 'CameraX', 'Google Maps SDK', 'Geofencing API'] },
-    { name: 'Backend & data', items: ['Firebase', 'Firestore', 'SQLite', 'MySQL', 'Flask'] },
-    { name: 'Libraries & tools', items: ['MediaPipe', 'Firebase Crashlytics', 'Dagger-Hilt', 'Python', 'NumPy', 'Matplotlib', 'Git', 'GitHub'] }
+    {
+      name: "iOS",
+      items: [
+        "Swift",
+        "SwiftUI",
+        "State Management",
+        "Background Tasks",
+        "Navigation",
+        "Media Handling",
+        "Xcode",
+      ],
+    },
+    {
+      name: "Android",
+      items: [
+        "Kotlin",
+        "Java",
+        "Jetpack Compose",
+        "XML",
+        "MVVM",
+        "CameraX",
+        "Google Maps SDK",
+        "Geofencing API",
+      ],
+    },
+    {
+      name: "Backend & data",
+      items: ["Firebase", "Firestore", "SQLite", "MySQL", "Flask"],
+    },
+    {
+      name: "Libraries & tools",
+      items: [
+        "MediaPipe",
+        "Firebase Crashlytics",
+        "Dagger-Hilt",
+        "Python",
+        "NumPy",
+        "Matplotlib",
+        "Git",
+        "GitHub",
+      ],
+    },
   ],
   experience: [
-    { role: 'Junior Mobile Application Developer', company: 'MedPrime Technologies', companyUrl: 'https://www.medprimetech.com/', location: 'Mumbai', description: 'Maintained and enhanced applications in the Cilika ecosystem. Built local medical record sharing across Android and iOS, integrated Firebase Crashlytics, resolved production stability issues, and implemented offline-first and background image-processing workflows.', technologies: ['Swift', 'SwiftUI', 'Android', 'Firebase Crashlytics', 'Offline-first workflows'], published: true }
+    {
+      role: "Junior Mobile Application Developer",
+      company: "MedPrime Technologies",
+      companyUrl: "https://www.medprimetech.com/",
+      location: "Mumbai",
+      description:
+        "Maintained and enhanced applications in the Cilika ecosystem. Built local medical record sharing across Android and iOS, integrated Firebase Crashlytics, resolved production stability issues, and implemented offline-first and background image-processing workflows.",
+      technologies: [
+        "Swift",
+        "SwiftUI",
+        "Android",
+        "Firebase Crashlytics",
+        "Offline-first workflows",
+      ],
+      published: true,
+    },
   ],
   education: [
-    { degree: 'BSc. Computer Science', institution: "Vivekanand Education Society’s College of Arts, Commerce and Science", location: 'Chembur, Mumbai, Maharashtra', startDate: 'July 2022', endDate: 'April 2025', description: 'CGPA: 9.67', published: true }
+    {
+      degree: "BSc. Computer Science",
+      institution:
+        "Vivekanand Education Society’s College of Arts, Commerce and Science",
+      location: "Chembur, Mumbai, Maharashtra",
+      startDate: "July 2022",
+      endDate: "April 2025",
+      description: "CGPA: 9.67",
+      published: true,
+    },
   ],
   achievements: [
-    { title: 'Pre-Incubatee — MUIDEAS Ideathon', organization: 'Selected for StealthShield', published: true },
-    { title: 'Top 10 — Aavishkar Research Competition', organization: 'District level', published: true },
-    { title: 'Runner-Up — Best Student', year: '2024–2025', published: true }
+    {
+      title: "Pre-Incubatee — MUIDEAS Ideathon",
+      organization: "Selected for StealthShield",
+      published: true,
+    },
+    {
+      title: "Top 10 — Aavishkar Research Competition",
+      organization: "District level",
+      published: true,
+    },
+    { title: "Runner-Up — Best Student", year: "2024–2025", published: true },
   ],
-  certificates: [], workshops: [], blogs: [],
-  settings: { siteTitle: 'Manoj Mourya — Mobile Application Developer', description: 'Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.' }
+  certificates: [],
+  workshops: [],
+  blogs: [],
+  settings: {
+    siteTitle: "Manoj Mourya — Mobile Application Developer",
+    description:
+      "Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.",
+  },
 };

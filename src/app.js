@@ -7,19 +7,9 @@ import {
 import { setupCodeCopy } from "./markdown.js";
 import { bindPageInteractions, initCustomCursor } from "./interactions.js";
 import { footer, header } from "./components.js";
-import { aboutPage, experiencePage } from "./pages/about.js";
-import { blogDetailPage, blogPage } from "./pages/blog.js";
-import { contactPage, notFoundPage } from "./pages/contact.js";
-import { homePage } from "./pages/home.js";
-import {
-  certificatesPage,
-  projectDetailPage,
-  projectsPage,
-} from "./pages/projects.js";
-import { escapeHtml as esc, getPath, published, slugify } from "./utils.js";
+import { resolveRoute } from "./router.js";
+import { escapeHtml as esc, getPath } from "./utils.js";
 import "../styles.css";
-
-
 
 const app = document.querySelector("#app");
 setupCodeCopy(app);
@@ -39,12 +29,13 @@ function render() {
     return;
   }
 
-  const page = resolvePage(route);
+  const page = resolveRoute(route, portfolioData, blogLoadState);
   app.innerHTML =
     header(portfolioData, route) + page.content + footer(portfolioData);
   document.title = page.title || portfolioData.settings.siteTitle;
   const description = document.querySelector('meta[name="description"]');
-  if (description) description.content = portfolioData.settings.description || "";
+  if (description)
+    description.content = portfolioData.settings.description || "";
   let shareImage = document.querySelector('meta[property="og:image"]');
   if (!shareImage) {
     shareImage = document.createElement("meta");
@@ -53,45 +44,6 @@ function render() {
   }
   shareImage.content = portfolioData.settings.ogImage || "";
   bindPageInteractions({ data: portfolioData, render });
-}
-
-function resolvePage(route) {
-  if (route === "/") return { content: homePage(portfolioData) };
-  if (route === "/projects") return { content: projectsPage(portfolioData) };
-  if (route.startsWith("/projects/")) {
-    const slug = decodeURIComponent(route.slice("/projects/".length));
-    const content = projectDetailPage(portfolioData, slug);
-    const project = published(portfolioData.projects).find(
-      (item) => (item.slug || slugify(item.title)) === slug,
-    );
-    return {
-      content: content || notFoundPage(),
-      title: project
-        ? `${project.title} — ${portfolioData.profile.name}`
-        : undefined,
-    };
-  }
-  if (route === "/about") return { content: aboutPage(portfolioData) };
-  if (route === "/experience")
-    return { content: experiencePage(portfolioData) };
-  if (route === "/certificates")
-    return { content: certificatesPage(portfolioData) };
-  if (route === "/blog") {
-    return { content: blogPage(portfolioData, blogLoadState) };
-  }
-  if (route.startsWith("/blog/")) {
-    const slug = decodeURIComponent(route.slice("/blog/".length));
-    const content = blogDetailPage(portfolioData, slug);
-    const post = published(portfolioData.blogs).find(
-      (item) => (item.slug || slugify(item.title)) === slug,
-    );
-    return {
-      content: content || notFoundPage(),
-      title: post ? `${post.title} — ${portfolioData.profile.name}` : undefined,
-    };
-  }
-  if (route === "/contact") return { content: contactPage(portfolioData) };
-  return { content: notFoundPage() };
 }
 
 function renderAdmin() {

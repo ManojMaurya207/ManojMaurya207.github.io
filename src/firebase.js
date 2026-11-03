@@ -1,24 +1,34 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 import {
   doc as liteDoc,
   getDoc as getLiteDoc,
   getFirestore as getLiteFirestore,
-} from 'firebase/firestore/lite';
-import { execute, field } from 'firebase/firestore/pipelines';
-import { firebaseConfig } from './firebase-config.js';
+} from "firebase/firestore/lite";
+import { execute, field } from "firebase/firestore/pipelines";
+import { firebaseConfig } from "./firebase-config.js";
 
 const collectionNames = [
-  'projects', 'experience', 'education', 'skills', 'skillCategories',
-  'achievements', 'certificates', 'workshops', 'socialLinks'
+  "projects",
+  "experience",
+  "education",
+  "skills",
+  "skillCategories",
+  "achievements",
+  "certificates",
+  "workshops",
+  "socialLinks",
 ];
-const BLOG_CACHE_KEY = 'portfolio-published-blogs-v2';
-const hasConfig = () => Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+const BLOG_CACHE_KEY = "portfolio-published-blogs-v2";
+const hasConfig = () =>
+  Boolean(
+    firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId,
+  );
 let db;
 let liteDb;
 let app;
 
-export const adminEmail = 'manojkumarmaurya9372@gmail.com';
+export const adminEmail = "manojkumarmaurya9372@gmail.com";
 
 export function getFirebaseApp() {
   if (!app) app = initializeApp(firebaseConfig);
@@ -26,14 +36,14 @@ export function getFirebaseApp() {
 }
 
 function getPortfolioDb() {
-  if (!db) db = getFirestore(getFirebaseApp(), 'portfolio');
+  if (!db) db = getFirestore(getFirebaseApp(), "portfolio");
   return db;
 }
 
 export { getPortfolioDb };
 
 function getPortfolioLiteDb() {
-  if (!liteDb) liteDb = getLiteFirestore(getFirebaseApp(), 'portfolio');
+  if (!liteDb) liteDb = getLiteFirestore(getFirebaseApp(), "portfolio");
   return liteDb;
 }
 
@@ -46,7 +56,7 @@ export async function loadRemoteDocument(collectionName, documentId) {
 }
 
 function toRows(snapshot) {
-  return snapshot.results.map(row => {
+  return snapshot.results.map((row) => {
     const data = row.data();
     return { ...data, id: row.id, published: data.isPublished === true };
   });
@@ -54,7 +64,7 @@ function toRows(snapshot) {
 
 export function getCachedBlogs() {
   try {
-    const cached = JSON.parse(localStorage.getItem(BLOG_CACHE_KEY) || 'null');
+    const cached = JSON.parse(localStorage.getItem(BLOG_CACHE_KEY) || "null");
     return Array.isArray(cached) ? cached : null;
   } catch {
     return null;
@@ -62,33 +72,44 @@ export function getCachedBlogs() {
 }
 
 function cacheBlogs(posts) {
-  try { localStorage.setItem(BLOG_CACHE_KEY, JSON.stringify(posts)); } catch {}
+  try {
+    localStorage.setItem(BLOG_CACHE_KEY, JSON.stringify(posts));
+  } catch {}
 }
 
 export async function loadRemoteBlogs(seed = []) {
-  if (!hasConfig()) return { blogs: seed, error: 'Firebase is not configured for this site.' };
+  if (!hasConfig())
+    return { blogs: seed, error: "Firebase is not configured for this site." };
   try {
     const firestore = getPortfolioDb();
     let snapshot;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         snapshot = await execute(
-          firestore.pipeline().collection('blogs')
-            .where(field('isPublished').equal(true))
-            .sort(field('order').ascending())
+          firestore
+            .pipeline()
+            .collection("blogs")
+            .where(field("isPublished").equal(true))
+            .sort(field("order").ascending()),
         );
         break;
       } catch (error) {
         if (attempt === 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
     const blogs = toRows(snapshot);
     cacheBlogs(blogs);
-    return { blogs, error: '' };
+    return { blogs, error: "" };
   } catch (error) {
-    console.warn('Firebase collection “blogs” is unavailable; keeping cached content.', error);
-    return { blogs: seed, error: error?.message || 'The published posts could not be loaded.' };
+    console.warn(
+      "Firebase collection “blogs” is unavailable; keeping cached content.",
+      error,
+    );
+    return {
+      blogs: seed,
+      error: error?.message || "The published posts could not be loaded.",
+    };
   }
 }
 
@@ -100,78 +121,109 @@ export async function loadRemotePortfolio(seed) {
     const firestore = getPortfolioDb();
     const result = {};
     const collectionResults = {};
-    const reads = collectionNames.map(async name => {
+    const reads = collectionNames.map(async (name) => {
       try {
         const snapshot = await execute(
-          firestore.pipeline().collection(name)
-            .where(field('isPublished').equal(true))
-            .sort(field('order').ascending())
+          firestore
+            .pipeline()
+            .collection(name)
+            .where(field("isPublished").equal(true))
+            .sort(field("order").ascending()),
         );
         collectionResults[name] = toRows(snapshot);
       } catch (error) {
-        console.warn(`Firebase collection “${name}” is unavailable; keeping local content.`, error);
+        console.warn(
+          `Firebase collection “${name}” is unavailable; keeping local content.`,
+          error,
+        );
       }
     });
-    reads.push((async () => {
-      try {
-        const profile = await loadRemoteDocument('portfolio', 'public');
-        if (profile?.isPublished === true) {
-          result.profile = { ...seed.profile, ...profile, profileImage: profile.profileImage || seed.profile.profileImage };
+    reads.push(
+      (async () => {
+        try {
+          const profile = await loadRemoteDocument("portfolio", "public");
+          if (profile?.isPublished === true) {
+            result.profile = {
+              ...seed.profile,
+              ...profile,
+              profileImage: profile.profileImage || seed.profile.profileImage,
+            };
+          }
+        } catch (error) {
+          console.warn(
+            "Firebase profile is unavailable; keeping local content.",
+            error,
+          );
         }
-      } catch (error) {
-        console.warn('Firebase profile is unavailable; keeping local content.', error);
-      }
-    })());
-    reads.push((async () => {
-      try {
-        const settings = await loadRemoteDocument('settings', 'public');
-        if (settings?.isPublished === true) {
-          result.settings = { ...seed.settings, ...settings };
+      })(),
+    );
+    reads.push(
+      (async () => {
+        try {
+          const settings = await loadRemoteDocument("settings", "public");
+          if (settings?.isPublished === true) {
+            result.settings = { ...seed.settings, ...settings };
+          }
+        } catch (error) {
+          console.warn(
+            "Firebase settings are unavailable; keeping local content.",
+            error,
+          );
         }
-      } catch (error) {
-        console.warn('Firebase settings are unavailable; keeping local content.', error);
-      }
-    })());
+      })(),
+    );
     await Promise.all(reads);
     const managedSections = result.settings?.managedSections || [];
     for (const name of collectionNames) {
       const rows = collectionResults[name];
-      if (rows !== undefined && (rows.length || managedSections.includes(name))) {
+      if (
+        rows !== undefined &&
+        (rows.length || managedSections.includes(name))
+      ) {
         result[name] = rows;
       }
     }
-    if (managedSections.includes('profile') && !result.profile) {
+    if (managedSections.includes("profile") && !result.profile) {
       result.profile = {
         ...seed.profile,
-        name: '',
-        initials: '',
-        role: '',
-        location: '',
-        currentlyBuilding: '',
-        intro: '',
-        bio: '',
-        email: '',
-        resumeUrl: '',
-        profileImage: '',
-        socials: []
+        name: "",
+        initials: "",
+        role: "",
+        location: "",
+        currentlyBuilding: "",
+        intro: "",
+        bio: "",
+        email: "",
+        resumeUrl: "",
+        profileImage: "",
+        socials: [],
       };
     }
     if (result.socialLinks) {
-      result.profile = { ...(result.profile || seed.profile), socials: result.socialLinks };
+      result.profile = {
+        ...(result.profile || seed.profile),
+        socials: result.socialLinks,
+      };
       delete result.socialLinks;
     }
     if (!result.skillCategories && result.skills?.length) {
       const groups = new Map();
       for (const skill of result.skills) {
-        const category = skill.category || 'Other';
+        const category = skill.category || "Other";
         if (!groups.has(category)) groups.set(category, []);
         groups.get(category).push(skill.name || skill.title);
       }
-      result.skillCategories = [...groups].map(([name, items]) => ({ name, items }));
+      result.skillCategories = [...groups].map(([name, items]) => ({
+        name,
+        items,
+      }));
     }
     return result;
   } catch (error) {
-    console.warn('Firebase initialization failed; using local portfolio content.', error);
+    console.warn(
+      "Firebase initialization failed; using local portfolio content.",
+      error,
+    );
     return null;
   }
 }

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.js\" styles.css"
+    "format": "prettier --write \"src/**/*.js\" styles.css",
+    "format:check": "prettier --check \"src/**/*.js\" styles.css"
   },
   "dependencies": {
     "firebase": "^12.19.0",
