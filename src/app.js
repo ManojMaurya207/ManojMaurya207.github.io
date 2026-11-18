@@ -32,18 +32,40 @@ function render() {
   const page = resolveRoute(route, portfolioData, blogLoadState);
   app.innerHTML =
     header(portfolioData, route) + page.content + footer(portfolioData);
-  document.title = page.title || portfolioData.settings.siteTitle;
-  const description = document.querySelector('meta[name="description"]');
-  if (description)
-    description.content = portfolioData.settings.description || "";
-  let shareImage = document.querySelector('meta[property="og:image"]');
-  if (!shareImage) {
-    shareImage = document.createElement("meta");
-    shareImage.setAttribute("property", "og:image");
-    document.head.append(shareImage);
-  }
-  shareImage.content = portfolioData.settings.ogImage || "";
+  const title = page.title || portfolioData.settings.siteTitle;
+  const description = portfolioData.settings.description || "";
+  const shareImage =
+    portfolioData.settings.ogImage || "/assets/profile-pic.png";
+  document.title = title;
+  setMetaContent("name", "description", description);
+  setMetaContent("property", "og:site_name", portfolioData.settings.siteTitle);
+  setMetaContent("property", "og:title", title);
+  setMetaContent("property", "og:description", description);
+  setMetaContent("property", "og:url", window.location.href.split("#")[0]);
+  setMetaContent(
+    "property",
+    "og:image",
+    new URL(shareImage, window.location.origin).href,
+  );
+  setMetaContent("property", "og:image:alt", portfolioData.profile.name);
+  setMetaContent("name", "twitter:title", title);
+  setMetaContent("name", "twitter:description", description);
+  setMetaContent(
+    "name",
+    "twitter:image",
+    new URL(shareImage, window.location.origin).href,
+  );
   bindPageInteractions({ data: portfolioData, render });
+}
+
+function setMetaContent(attribute, name, content) {
+  let meta = document.querySelector(`meta[${attribute}="${name}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attribute, name);
+    document.head.append(meta);
+  }
+  meta.content = content;
 }
 
 function renderAdmin() {

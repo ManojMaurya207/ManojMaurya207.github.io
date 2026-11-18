@@ -86,7 +86,7 @@ export const adminContentDefinitions = {
   settings: {
     title: "Site settings",
     description:
-      "Control your page title, search description, and share image.",
+      "Control your page title, search description, and share image. GitHub Pages adds these to share metadata during each deployment.",
     fields: [
       { name: "siteTitle", label: "Site title", required: true, max: 140 },
       {
@@ -102,6 +102,7 @@ export const adminContentDefinitions = {
         asset: "image",
         folder: "profile",
         filename: "social-card",
+        help: "Use a public HTTPS image URL or a root-relative /assets/… path. Social previews update after the next deployment, and sharing apps may cache old previews.",
       },
     ],
   },

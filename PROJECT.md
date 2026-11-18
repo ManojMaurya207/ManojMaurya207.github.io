@@ -8,14 +8,14 @@ Manoj Mourya’s portfolio is a responsive single-page website for presenting mo
 
 ## 2. Technology stack
 
-| Area                 | Implementation                                                               |
-| -------------------- | ---------------------------------------------------------------------------- |
-| Build and dev server | Vite 7; native ES modules                                                    |
-| UI                   | Vanilla JavaScript functions returning HTML strings; one shared `styles.css` |
-| Backend              | Firebase Web SDK 12: Authentication, Firestore, Storage                      |
-| Markdown             | Repository renderer plus `highlight.js` core and selected language modules   |
-| Hosting              | Firebase Hosting serves `dist/` and rewrites SPA paths to `index.html`       |
-| Fonts                | DM Sans and DM Mono loaded from Google Fonts with system fallbacks           |
+| Area                 | Implementation                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Build and dev server | Vite 7; native ES modules                                                                                                  |
+| UI                   | Vanilla JavaScript functions returning HTML strings; one shared `styles.css`                                               |
+| Backend              | Firebase Web SDK 12: Authentication, Firestore, Storage                                                                    |
+| Markdown             | Repository renderer plus `highlight.js` core and selected language modules                                                 |
+| Hosting              | GitHub Pages deploys `dist/` through `.github/workflows/deploy.yml`; Firebase Hosting is also configured as an alternative |
+| Fonts                | DM Sans and DM Mono loaded from Google Fonts with system fallbacks                                                         |
 
 The repository has no UI framework, routing package, state library, TypeScript, lint runner, or test framework. See the actual commands in [Development and deployment](#14-development-build-validation-and-deployment).
 
@@ -24,6 +24,7 @@ The repository has no UI framework, routing package, state library, TypeScript, 
 ```text
 .
 ├── index.html                    # Document metadata, fallback message, module entry
+├── scripts/build.mjs             # Vite build and static share metadata generation
 ├── src/
 │   ├── app.js                    # Startup, global data state, render, hydration
 │   ├── router.js                 # Route-to-template resolution and detail titles
@@ -65,9 +66,9 @@ The repository has no UI framework, routing package, state library, TypeScript, 
 
 ## 4. Entry points and initialization
 
-`index.html` provides the initial SEO metadata, favicon, font hints, `#app`, and a helpful server-start screen for direct `file://` launches. Vite loads `src/app.js` as a module. `app.js` imports the global stylesheet, obtains local seeds, sets up delegated Markdown code-copy handling, restores cached blog content, and applies the saved/system theme before rendering.
+`index.html` provides fallback SEO/social metadata, favicon, font hints, `#app`, and a helpful server-start screen for direct `file://` launches. The production command (`npm run build`) runs `scripts/build.mjs`, which invokes Vite and then reads the published `settings/public` document from Firestore to embed the site title, description, Open Graph, and Twitter image tags in `dist/index.html`. If Firestore is unreachable at build time or there are no published settings, it keeps the fallback metadata. Vite loads `src/app.js` as a module. `app.js` imports the global stylesheet, obtains local seeds, sets up delegated Markdown code-copy handling, restores cached blog content, and applies the saved/system theme before rendering.
 
-For public paths it renders once from local state, then loads remote content. For `/admin`, it displays a loading shell and dynamically imports `src/admin.js`, keeping admin/auth code out of the initial route path. The detailed order is diagrammed in [FLOW.md](./FLOW.md#startup-and-public-rendering).
+For public paths it renders once from local state, then loads remote content. Each browser render updates the document title, description, Open Graph, and Twitter tags for the active route. For `/admin`, it displays a loading shell and dynamically imports `src/admin.js`, keeping admin/auth code out of the initial route path. The detailed order is diagrammed in [FLOW.md](./FLOW.md#startup-and-public-rendering).
 
 ## 5. Routing and page architecture
 
@@ -203,7 +204,7 @@ Admin state in `admin.js` tracks the auth user, active section, loaded/loading s
 - Collection reads use Firestore Enterprise pipeline APIs from `firebase/firestore/pipelines`. Fixed singleton reads use Firestore Lite. Admin writes use Firestore `setDoc`, `deleteDoc`, and batches for ordering.
 - Blog Markdown supports headings, paragraphs, emphasis, links, images, ordered/unordered/task lists, quotes, tables, rules, and fenced code. Highlighting uses registered highlight.js languages with auto-detection for unknown language names; copy uses `navigator.clipboard`.
 - Profile/project/credential/blog asset uploads use Firebase Storage and return download URLs. Client validation checks accepted MIME type and maximum size; the Storage rules repeat authorization/type/size enforcement. Storage must be initialized in the Firebase project before uploads can succeed.
-- `src/firebase-config.js` contains public Firebase Web app settings; there are no app environment variables or `.env` templates. `.firebaserc` points Firebase CLI to default project `portfolio-3fe77`; `firebase.json` configures the named `portfolio` Firestore database, rules, Auth provider/domain metadata, Hosting output, and SPA rewrite.
+- `src/firebase-config.js` contains public Firebase Web app settings; the browser app does not read `.env` files. The build optionally reads `PORTFOLIO_SITE_URL` to resolve root-relative share images for a custom domain. `.firebaserc` points Firebase CLI to default project `portfolio-3fe77`; `firebase.json` configures the named `portfolio` Firestore database, rules, Auth provider/domain metadata, Hosting output, and SPA rewrite.
 - Firestore fields and allowed shapes are validated in `firestore.rules`. The client-side admin owner check is UX only; security relies on server rules. Read [the existing rules review](./docs/firebase-admin-rules-review.md) before changing access.
 
 ## 12. Assets
@@ -219,7 +220,7 @@ Search for references before renaming/removing an asset. Keep public URLs rooted
 
 ## 13. SEO, accessibility, and performance
 
-- `index.html` provides initial title, description, theme color, viewport, and favicon. `app.js` updates `document.title`, description, and `og:image` after each public render; detail pages supply titles from the matched record.
+- `index.html` provides fallback title, description, Open Graph, Twitter, theme-color, viewport, and favicon tags. `app.js` updates browser metadata after each public render. `scripts/build.mjs` embeds published Firestore settings into production HTML so link unfurlers can read them without JavaScript; admin changes require the next Pages deployment, and social services may cache old previews.
 - Semantic headers/nav/main/footer, labels, required form inputs, `aria-current`, `aria-expanded`, tab roles/states, status/alert feedback, descriptive image alt text, and visible focus styles are used across the public/admin UI. Keep these when refactoring.
 - Hero portrait uses `fetchpriority="high"`; below-fold project/blog images use lazy loading. Custom cursor and reveal animations are gated for reduced motion/device capabilities. No-JS direct file opening displays a server-start explanation rather than pretending the module app can run from `file://`.
 - Vite splits Firestore, Auth, and Storage SDK chunks in `vite.config.js`; the admin module is dynamically imported. Remote content falls back to local seed data and cached blogs to avoid blank public pages.
@@ -244,7 +245,7 @@ npm run preview
 
 There are no configured lint, type-check, or automated test commands. For UI changes, manually smoke-test the affected route, deep-link refresh behavior, responsive breakpoints, and any relevant interaction in a browser. Admin checks require a configured Firebase project and verified owner account.
 
-Firebase Hosting publishes `dist/`. `.firebaserc` selects the default project. Review `firebase.json`, `firestore.rules`, and `storage.rules` before deployment, then deploy the intended targets with Firebase CLI (for example `firebase deploy --only hosting,firestore,storage`). Storage upload testing requires the bucket to exist. Direct-file opening is unsupported; use the Vite server or deployed Hosting URL.
+The default deployment is GitHub Pages through `.github/workflows/deploy.yml`: pushes to `main` and manual workflow runs build `dist/`, copy `index.html` to `404.html` for client-side route fallback, and deploy the artifact. The build reads only the public published `settings/public` document and falls back to the static defaults if unavailable. Set `PORTFOLIO_SITE_URL` in the build environment if the site moves to a custom domain. Firebase Hosting is configured as an alternative in `firebase.json`; `.firebaserc` selects its default project. Review `firebase.json`, `firestore.rules`, and `storage.rules` before deploying Firebase resources with the Firebase CLI. Storage upload testing requires the bucket to exist. Direct-file opening is unsupported; use the Vite server or deployed site.
 
 ## 15. Architectural decisions and extension points
 

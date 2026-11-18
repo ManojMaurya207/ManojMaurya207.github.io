@@ -9,33 +9,29 @@ npm install
 npm run dev
 ```
 
-Create a production build with `npm run build`. Firebase Hosting serves the generated `dist` directory.
+Create a production build with `npm run build`. The build adds the published site title, search description, and social image from Firestore to the static HTML head; fallback metadata is kept if the public settings document cannot be read. GitHub Pages deploys `dist/` on pushes to `main` and supports manual runs through the repository Actions tab. Firebase Hosting is configured as an alternative.
 
 ## Source structure
 
 The site uses Vite and native JavaScript modules. Page templates return HTML strings, while the application entry point owns rendering, browser events, and remote data hydration.
 
 ```text
-src/
-├── app.js                 # Application startup, theme, data loading, page lifecycle
-├── router.js              # Route matching and page metadata
-├── components.js          # Shared site shell and reusable portfolio sections
-├── pages/                 # Home, about, projects, blog, contact, experience templates
-├── admin.js               # Admin authentication, state, and event coordination
-├── admin/
-│   ├── blog-store.js      # Blog Firestore reads and writes
-│   ├── content-schema.js  # Admin navigation and editable field definitions
-│   ├── content-store.js   # Portfolio content validation, uploads, and Firestore writes
-│   ├── content-view.js   # Portfolio content list and editor templates
-│   ├── ui.js             # Shared admin headers, feedback, and form actions
-│   ├── views.js           # Admin login, dashboard, and blog templates
-│   └── markdown-editor.js # Markdown formatting actions
-├── firebase.js            # Firebase initialization and public content reads
-├── data.js                # Local seed content and defaults
-├── interactions.js        # Site interactions and custom cursor
-├── markdown.js            # Markdown rendering and code highlighting
-├── project-artwork.js     # Project thumbnail artwork
-└── utils.js               # Shared formatting and data helpers
+.
+├── scripts/
+│   └── build.mjs           # Production build and static social metadata generation
+└── src/
+    ├── app.js              # Application startup, theme, data loading, page lifecycle
+    ├── router.js           # Route matching and page metadata
+    ├── components.js       # Shared site shell and reusable portfolio sections
+    ├── pages/              # Home, about, projects, blog, contact, experience templates
+    ├── admin.js            # Admin authentication, state, and event coordination
+    ├── admin/              # Admin stores, schema, views, and Markdown editor
+    ├── firebase.js         # Firebase initialization and public content reads
+    ├── data.js             # Local seed content and defaults
+    ├── interactions.js     # Site interactions and custom cursor
+    ├── markdown.js         # Markdown rendering and code highlighting
+    ├── project-artwork.js  # Project thumbnail artwork
+    └── utils.js            # Shared formatting and data helpers
 ```
 
 `router.js` selects a page without owning app state. The admin controller coordinates authentication and UI state; `admin/content-schema.js` defines editable fields, `admin/content-view.js` renders them, and the store modules handle persistence. Existing Firestore collections and document fields remain unchanged.
@@ -52,7 +48,7 @@ Open `/admin` from the local site or deployed Hosting URL. The editor supports e
 
 Firestore Pipeline operations read the published lists from the Enterprise database. The deployed Firestore rules allow public reads of published portfolio content and restrict blog drafts and writes to the verified owner account. Storage is not initialized in the Firebase project yet, so blog image uploads are unavailable; use HTTPS cover-image URLs until Storage is enabled and its rules are deployed.
 
-Build before deploying Hosting with the Firebase tools. Review the rules in `firestore.rules` and `storage.rules` and deploy them to the connected project. Hosting rewrites support routes such as `/projects/stealthshield`.
+The site settings editor saves values to Firestore immediately. Social sharing crawlers read the generated HTML, so deploy the site again after changing the share image; social platforms may also cache old previews. The build reads the public `settings/public` document without credentials and falls back to defaults if the read fails. The GitHub Pages workflow copies `index.html` to `404.html` to support routes such as `/projects/stealthshield`. For optional Firebase Hosting deployment, `firebase.json` provides the SPA rewrite; review the rules in `firestore.rules` and `storage.rules` before deploying Firebase resources.
 
 ## Content
 

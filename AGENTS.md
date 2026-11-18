@@ -13,7 +13,9 @@ For the complete runtime and page flow, read [FLOW.md](./FLOW.md). For the sourc
 - Keep routing in `src/router.js`; shared page-shell components in `src/components.js`; page templates in `src/pages/`; public state and seed content in `src/data.js`; Firebase reads in `src/firebase.js`; and browser behaviors in `src/interactions.js`.
 - Keep admin responsibilities separated: `src/admin.js` coordinates auth, state, delegated events, and rendering; `src/admin/content-schema.js` defines sections and fields; `content-view.js`, `views.js`, and `ui.js` render forms and screens; `content-store.js` and `blog-store.js` perform persistence; `markdown-editor.js` handles Markdown formatting.
 - `src/markdown.js` owns Markdown rendering, syntax highlighting, and code-copy behavior. `src/project-artwork.js` owns project thumbnail selection and inline SVG illustrations. `src/utils.js` owns shared escaping, slug, route, publication, and date helpers. `styles.css` is the shared stylesheet and design system.
+- `scripts/build.mjs` runs the Vite production build, reads the public `settings/public` Firestore document, and writes published site title, description, and social-image values into the static HTML head for social crawlers. Keep a usable fallback when that remote read is unavailable.
 - Firestore collection names and document fields are an existing contract with `firestore.rules`, `storage.rules`, the admin schema, and public renderers. Review those together before changing a data shape. See [the admin data model](./docs/admin-content-data-model.md).
+- Social sharing previews are read from generated static HTML by crawlers that do not run application JavaScript. Site-settings changes require a new GitHub Pages build/deployment for crawler metadata to change; update the build script and [FLOW.md](./FLOW.md) / [PROJECT.md](./PROJECT.md) if that hosting flow changes.
 
 ## Coding standards
 

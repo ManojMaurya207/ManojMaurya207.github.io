@@ -4,7 +4,7 @@ This document follows the running application from browser startup through publi
 
 ## Startup and public rendering
 
-`index.html` provides the initial metadata, favicon, font preconnects, `#app` mount point, and a readable local-server message. It imports `/src/app.js` as a module. The app imports `styles.css`, loads the local seed object, and reads cached published blog posts before the first render.
+`index.html` provides fallback SEO/social metadata, favicon, font preconnects, `#app` mount point, and a readable local-server message. It imports `/src/app.js` as a module. The app imports `styles.css`, loads the local seed object, and reads cached published blog posts before the first render. During production builds, `scripts/build.mjs` replaces the fallback title, description, and Open Graph/Twitter image in `dist/index.html` with the published `settings/public` Firestore values. This matters because social crawlers commonly read the initial HTML without running app JavaScript.
 
 ```mermaid
 flowchart TD
@@ -28,13 +28,29 @@ flowchart TD
   R --> S[Render updated public route]
 ```
 
+### Social sharing metadata at deployment
+
+The public app updates metadata in the browser after each render, including when it hydrates saved site settings. Share crawlers often skip that JavaScript, so the production build also embeds published settings into the initial HTML. Saving settings in `/admin` updates Firestore immediately; the generated social preview changes on the next GitHub Pages deployment. Sharing services may continue to display a cached preview until they refresh the URL.
+
+```mermaid
+flowchart LR
+  A[Admin saves site settings] --> B[Firestore settings/public]
+  C[Push to main or run workflow manually] --> D[GitHub Pages workflow]
+  D --> E[npm run build]
+  E --> F[scripts/build.mjs reads published settings]
+  B --> F
+  F --> G[dist/index.html with static OG and Twitter tags]
+  G --> H[GitHub Pages deployment]
+  H --> I[Social crawler reads metadata and image URL]
+```
+
 Remote hydration begins after the initial local render. `loadRemoteBlogs()` runs first; it reads the published blog pipeline, updates the `portfolio-published-blogs-v2` localStorage cache, and returns cached/seed content plus an error state on failure. `loadRemotePortfolio()` then reads the portfolio collections and the `portfolio/public` and `settings/public` singleton documents. A successful remote response re-renders the current public route. Admin routes are skipped by the public loader.
 
 ## Routing and page composition
 
 `getPath()` in `src/utils.js` normalizes the current pathname. `resolveRoute()` in `src/router.js` maps it to a page template and, for project/article detail routes, a route-specific document title. Unknown paths and unpublished/missing detail slugs use the 404 template.
 
-Internal same-tab links are intercepted by `bindInternalNavigation()` in `src/interactions.js`: it updates history with `pushState`, scrolls to the top, and calls the app render function. File/download links, links opening another context, and modified clicks remain native browser navigation. The `popstate` listener re-renders on back/forward navigation. Firebase Hosting rewrites unknown paths to `/index.html`, allowing direct loads of routes such as `/projects/stealthshield`.
+Internal same-tab links are intercepted by `bindInternalNavigation()` in `src/interactions.js`: it updates history with `pushState`, scrolls to the top, and calls the app render function. File/download links, links opening another context, and modified clicks remain native browser navigation. The `popstate` listener re-renders on back/forward navigation. The GitHub Pages workflow copies the built `index.html` to `404.html`, allowing its client-side route fallback to serve paths such as `/projects/stealthshield`. `firebase.json` also configures an SPA rewrite for optional Firebase Hosting deployments.
 
 ```mermaid
 flowchart LR
