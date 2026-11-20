@@ -48,38 +48,166 @@
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <style>
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+      }
+
+      #app {
+        min-height: 100svh;
+        background: #f6f6f2;
+        color: #19201e;
+      }
+
+      :root[data-theme="dark"] #app {
+        background: #0d1213;
+        color: #edf0eb;
+      }
+
+      .boot-screen {
+        min-height: 100svh;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 18px;
+        text-align: center;
+      }
+
+      .boot-wordmark {
+        color: inherit;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.08em;
+        text-decoration: none;
+      }
+
+      .boot-wordmark span {
+        color: #4859a7;
+      }
+
+      .boot-status {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: #737a73;
+        font:
+          10px "DM Mono",
+          monospace;
+        letter-spacing: 0.12em;
+      }
+
+      .boot-spinner {
+        width: 13px;
+        height: 13px;
+        border: 1px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: boot-spin 0.8s linear infinite;
+      }
+
+      .boot-screen p {
+        margin: 0;
+        color: #737a73;
+        font-size: 14px;
+      }
+
+      .boot-error {
+        width: min(680px, calc(100% - 40px));
+        margin: 12vh auto;
+        padding: 32px;
+        border: 1px solid #dedfd8;
+        background: #fff;
+        line-height: 1.6;
+      }
+
+      .boot-error .boot-kicker {
+        color: #4859a7;
+        font:
+          12px "DM Mono",
+          monospace;
+        letter-spacing: 0.14em;
+      }
+
+      .boot-error h1 {
+        margin: 0 0 18px;
+        font-size: clamp(30px, 6vw, 52px);
+        line-height: 1.05;
+      }
+
+      :root[data-theme="dark"] .boot-error {
+        border-color: #283232;
+        background: #131a1b;
+      }
+
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) #app {
+          background: #0d1213;
+          color: #edf0eb;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .boot-spinner {
+          animation: none;
+        }
+      }
+    </style>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("portfolio-theme");
+        if (savedTheme === "dark" || savedTheme === "light") {
+          document.documentElement.dataset.theme = savedTheme;
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="app">
-      <main
-        style="
-          max-width: 680px;
-          margin: 12vh auto;
-          padding: 32px;
-          font:
-            16px/1.6 system-ui,
-            sans-serif;
-          color: #f5f5f1;
-          background: #101312;
-          border-radius: 16px;
-        "
-      >
-        <p style="font: 12px monospace; letter-spacing: 0.14em; color: #a8a2ff">
-          PORTFOLIO / LOCAL PREVIEW
-        </p>
-        <h1 style="font-size: clamp(30px, 6vw, 52px); line-height: 1.05">
-          Start the local server to view this site.
-        </h1>
-        <p>
-          This portfolio uses JavaScript modules and Firebase. Opening
-          <code>index.html</code> directly as a file leaves the app blank.
-        </p>
-        <p>
-          From the project folder, run <code>npm run dev</code>, then open
-          <code>http://localhost:5173</code>.
-        </p>
+      <main class="boot-screen" role="status" aria-live="polite">
+        <a class="boot-wordmark" href="/" aria-label="Manoj Mourya"
+          >MM<span>.</span></a
+        >
+        <div class="boot-status">
+          <span class="boot-spinner" aria-hidden="true"></span>PORTFOLIO /
+          LOADING
+        </div>
+        <p>Loading your portfolio…</p>
       </main>
     </div>
+    <script>
+      const appRoot = document.querySelector("#app");
+      const showStartupError = (title, message) => {
+        appRoot.innerHTML = `<main class="boot-error"><p class="boot-kicker">PORTFOLIO / STARTUP</p><h1>${title}</h1><p>${message}</p></main>`;
+      };
+
+      if (location.protocol === "file:") {
+        showStartupError(
+          "Start the local server to view this site.",
+          "This portfolio uses JavaScript modules and Firebase. Opening <code>index.html</code> directly as a file leaves the app blank. From the project folder, run <code>npm run dev</code>, then open <code>http://localhost:5173</code>.",
+        );
+      } else {
+        window.setTimeout(() => {
+          if (appRoot.dataset.appReady !== "true") {
+            showStartupError(
+              "The portfolio is taking longer than expected.",
+              "Refresh the page to try again. If the issue continues, check the browser console for a startup error.",
+            );
+          }
+        }, 15000);
+      }
+    </script>
     <script type="module" src="/src/app.js"></script>
   </body>
 </html>

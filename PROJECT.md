@@ -23,7 +23,7 @@ The repository has no UI framework, routing package, state library, TypeScript, 
 
 ```text
 .
-├── index.html                    # Document metadata, fallback message, module entry
+├── index.html                    # Document metadata, boot screen, module entry
 ├── scripts/build.mjs             # Vite build and static share metadata generation
 ├── src/
 │   ├── app.js                    # Startup, global data state, render, hydration
@@ -66,7 +66,7 @@ The repository has no UI framework, routing package, state library, TypeScript, 
 
 ## 4. Entry points and initialization
 
-`index.html` provides fallback SEO/social metadata, favicon, font hints, `#app`, and a helpful server-start screen for direct `file://` launches. The production command (`npm run build`) runs `scripts/build.mjs`, which invokes Vite and then reads the published `settings/public` document from Firestore to embed the site title, description, Open Graph, and Twitter image tags in `dist/index.html`. If Firestore is unreachable at build time or there are no published settings, it keeps the fallback metadata. Vite loads `src/app.js` as a module. `app.js` imports the global stylesheet, obtains local seeds, sets up delegated Markdown code-copy handling, restores cached blog content, and applies the saved/system theme before rendering.
+`index.html` provides fallback SEO/social metadata, favicon, font hints, and an inline branded loading screen while the app module loads. Its startup check applies the saved theme before paint, shows the server-start explanation only for direct `file://` launches, and displays a recovery message if the app has not rendered within 15 seconds. The production command (`npm run build`) runs `scripts/build.mjs`, which invokes Vite and then reads the published `settings/public` document from Firestore to embed the site title, description, Open Graph, and Twitter image tags in `dist/index.html`. If Firestore is unreachable at build time or there are no published settings, it keeps the fallback metadata. Vite loads `src/app.js` as a module. `app.js` imports the global stylesheet, obtains local seeds, sets up delegated Markdown code-copy handling, restores cached blog content, and applies the saved/system theme before rendering.
 
 For public paths it renders once from local state, then loads remote content. Each browser render updates the document title, description, Open Graph, and Twitter tags for the active route. For `/admin`, it displays a loading shell and dynamically imports `src/admin.js`, keeping admin/auth code out of the initial route path. The detailed order is diagrammed in [FLOW.md](./FLOW.md#startup-and-public-rendering).
 
@@ -222,7 +222,7 @@ Search for references before renaming/removing an asset. Keep public URLs rooted
 
 - `index.html` provides fallback title, description, Open Graph, Twitter, theme-color, viewport, and favicon tags. `app.js` updates browser metadata after each public render. `scripts/build.mjs` embeds published Firestore settings into production HTML so link unfurlers can read them without JavaScript; admin changes require the next Pages deployment, and social services may cache old previews.
 - Semantic headers/nav/main/footer, labels, required form inputs, `aria-current`, `aria-expanded`, tab roles/states, status/alert feedback, descriptive image alt text, and visible focus styles are used across the public/admin UI. Keep these when refactoring.
-- Hero portrait uses `fetchpriority="high"`; below-fold project/blog images use lazy loading. Custom cursor and reveal animations are gated for reduced motion/device capabilities. No-JS direct file opening displays a server-start explanation rather than pretending the module app can run from `file://`.
+- Hero portrait uses `fetchpriority="high"`; below-fold project/blog images use lazy loading. Custom cursor and reveal animations are gated for reduced motion/device capabilities. No-JS direct file opening displays a server-start explanation rather than pretending the module app can run from `file://`; normal HTTP startup shows the branded boot state instead.
 - Vite splits Firestore, Auth, and Storage SDK chunks in `vite.config.js`; the admin module is dynamically imported. Remote content falls back to local seed data and cached blogs to avoid blank public pages.
 - Avoid new blocking assets, eager-loading below-fold images, large dependency additions, and unsanitized HTML insertion.
 

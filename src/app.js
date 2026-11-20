@@ -32,6 +32,7 @@ function render() {
   const page = resolveRoute(route, portfolioData, blogLoadState);
   app.innerHTML =
     header(portfolioData, route) + page.content + footer(portfolioData);
+  app.dataset.appReady = "true";
   const title = page.title || portfolioData.settings.siteTitle;
   const description = portfolioData.settings.description || "";
   const shareImage =
@@ -71,6 +72,7 @@ function setMetaContent(attribute, name, content) {
 function renderAdmin() {
   app.innerHTML =
     '<main class="admin-page"><div class="admin-loading">Loading admin…</div></main>';
+  app.dataset.appReady = "true";
   document.title = `Admin — ${portfolioData.profile.name}`;
 
   import("./admin.js")

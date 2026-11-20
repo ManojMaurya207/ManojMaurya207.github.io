@@ -4,7 +4,7 @@ This document follows the running application from browser startup through publi
 
 ## Startup and public rendering
 
-`index.html` provides fallback SEO/social metadata, favicon, font preconnects, `#app` mount point, and a readable local-server message. It imports `/src/app.js` as a module. The app imports `styles.css`, loads the local seed object, and reads cached published blog posts before the first render. During production builds, `scripts/build.mjs` replaces the fallback title, description, and Open Graph/Twitter image in `dist/index.html` with the published `settings/public` Firestore values. This matters because social crawlers commonly read the initial HTML without running app JavaScript.
+`index.html` provides fallback SEO/social metadata, favicon, font preconnects, and a styled `#app` loading screen. A small inline check applies the saved theme before paint, preserves the local-server instructions only for `file://` launches, and shows a startup error if the application has not rendered within 15 seconds. It imports `/src/app.js` as a module. The app imports `styles.css`, loads the local seed object, and reads cached published blog posts before the first render. During production builds, `scripts/build.mjs` replaces the fallback title, description, and Open Graph/Twitter image in `dist/index.html` with the published `settings/public` Firestore values. This matters because social crawlers commonly read the initial HTML without running app JavaScript.
 
 ```mermaid
 flowchart TD
