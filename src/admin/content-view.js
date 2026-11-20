@@ -35,7 +35,7 @@ function renderField(fieldDef, record) {
         : fieldDef.asset === "document"
           ? "PDF or image, up to 15 MB."
           : "JPEG, PNG, WebP, or GIF, up to 8 MB.";
-    return `<div class="admin-cover-row"><label>${label} URL<input name="${esc(fieldDef.name)}" type="text" maxlength="2048" value="${esc(value)}" placeholder="https://… or /assets/…">${fieldDef.help ? `<span class="field-help">${esc(fieldDef.help)}</span>` : ""}</label><label>Upload ${label.toLowerCase()}<input type="file" name="upload:${esc(fieldDef.name)}" accept="${accept}"><span class="field-help">${note} Uploads are stored in Firebase Storage.</span></label></div>${value ? `<div class="admin-cover-preview"><a href="${esc(value)}" target="_blank" rel="noreferrer">Current ${label.toLowerCase()} ↗</a></div>` : ""}`;
+    return `<div class="admin-cover-row"><label>${label} URL<input name="${esc(fieldDef.name)}" type="text" maxlength="2048" value="${esc(value)}" placeholder="${esc(fieldDef.placeholder || "https://… or /assets/…")}">${fieldDef.help ? `<span class="field-help">${esc(fieldDef.help)}</span>` : ""}</label><label>Upload ${label.toLowerCase()}<input type="file" name="upload:${esc(fieldDef.name)}" accept="${accept}"><span class="field-help">${note} Uploads are stored in Firebase Storage.</span></label></div>${value ? `<div class="admin-cover-preview"><a href="${esc(value)}" target="_blank" rel="noreferrer">Current ${label.toLowerCase()} ↗</a></div>` : ""}`;
   }
   if (fieldDef.type === "list") {
     return `<label>${label}<textarea name="${esc(fieldDef.name)}" rows="5" ${maximum} placeholder="One item per line">${esc(Array.isArray(value) ? value.join("\n") : "")}</textarea><span class="field-help">One per line, up to ${fieldDef.maxItems} items.</span></label>`;

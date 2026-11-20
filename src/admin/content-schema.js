@@ -73,6 +73,8 @@ export const adminContentDefinitions = {
         asset: "pdf",
         folder: "profile",
         filename: "resume",
+        placeholder: "https://drive.google.com/file/d/…/view",
+        help: "Paste a Google Drive share link or another public HTTPS PDF URL. In Google Drive, set General access to Anyone with the link. Visitors can preview and download the résumé from Drive.",
       },
       {
         name: "socials",

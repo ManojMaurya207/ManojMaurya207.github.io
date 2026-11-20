@@ -12,7 +12,7 @@ export const portfolioData = {
       "Mobile developer building healthcare and utility applications with Swift, SwiftUI, Kotlin, and Jetpack Compose.",
     bio: "I’m a mobile application developer with hands-on experience building and maintaining healthcare and utility apps. I work across iOS and Android, with a focus on offline-first workflows, background processing, media handling, and reliable production software.",
     email: "manojkumarmaurya9372@gmail.com",
-    resumeUrl: "/assets/Manoj-Mourya-Resume.pdf",
+    resumeUrl: "/assets/Manoj-Mourya-Software-Developer.pdf",
     profileImage: "/assets/profile-pic.png",
     socials: [
       {

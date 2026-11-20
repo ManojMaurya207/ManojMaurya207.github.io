@@ -46,7 +46,7 @@ function renderHero(data, socials) {
     ? `<img class="portrait-photo" src="${esc(data.profile.profileImage)}" alt="${esc(data.profile.name)} in their workspace" fetchpriority="high">`
     : `<div class="portrait-grid"></div><div class="portrait-monogram">${esc(data.profile.initials)}</div><span class="portrait-note">ANDROID · MOBILE · PRODUCT</span><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>`;
   const resumeLink = data.profile.resumeUrl
-    ? `<a class="button button-plain" href="${esc(data.profile.resumeUrl)}" target="_blank">Résumé ${arrow}</a>`
+    ? `<a class="button button-plain" href="${esc(data.profile.resumeUrl)}" target="_blank" rel="noreferrer">Résumé ${arrow}</a>`
     : "";
 
   return `<section class="hero wrap">
