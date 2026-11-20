@@ -1,4 +1,5 @@
 import {
+  Timestamp,
   deleteDoc,
   doc,
   serverTimestamp,
@@ -32,7 +33,7 @@ export function describeAdminError(
     code.includes("permission-denied") ||
     /missing or insufficient permissions/i.test(message)
   ) {
-    return "Firestore rejected this write. The owner token is verified; confirm the portfolio database has the latest rules and that the entry matches its form fields.";
+    return "Firestore rules rejected this save. Check the required fields and URL or list limits, then confirm the latest rules are deployed to the portfolio database.";
   }
   if (
     code.includes("unavailable") ||
@@ -144,9 +145,23 @@ function settingsWithManagedSection(settings, collectionName) {
     isPublished: true,
     published: true,
     order: Number.isInteger(settings?.order) ? settings.order : 1,
-    createdAt: settings?.createdAt || serverTimestamp(),
+    createdAt: settings?.createdAt
+      ? toFirestoreTimestamp(settings.createdAt)
+      : serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+}
+
+function toFirestoreTimestamp(value) {
+  if (value instanceof Timestamp) return value;
+  if (
+    value &&
+    Number.isInteger(value.seconds) &&
+    Number.isInteger(value.nanoseconds)
+  ) {
+    return new Timestamp(value.seconds, value.nanoseconds);
+  }
+  return value;
 }
 
 function hasPublishedEntry(records, excludingId) {
@@ -199,11 +214,9 @@ export async function saveContentRecord(sectionId, form, currentContent) {
   const existing = section.singleton
     ? currentRows
     : currentRows.find((record) => record.id === existingId);
-  const values = existing ? { ...existing } : {};
-  if (sectionId === "projects") {
-    values.links = { ...(existing?.links || {}) };
-  }
-  delete values.id;
+  // Build writes from the current schema so stale or unknown Firestore fields
+  // cannot leak into a strict rules-validated document.
+  const values = {};
 
   for (const fieldDef of definition.fields) {
     if (fieldDef.type === "checkbox") {
@@ -218,11 +231,32 @@ export async function saveContentRecord(sectionId, form, currentContent) {
           `${fieldDef.label} can contain up to ${fieldDef.maxItems} items.`,
         );
       }
+      if (
+        fieldDef.maxItemLength &&
+        items.some((item) => item.length > fieldDef.maxItemLength)
+      ) {
+        throw new Error(
+          `Each ${fieldDef.label.toLowerCase()} item must be ${fieldDef.maxItemLength} characters or shorter.`,
+        );
+      }
       writeNested(values, fieldDef.name, items);
     } else if (fieldDef.type === "socials") {
       const socials = parseSocials(formData.get(fieldDef.name));
       if (socials.length > fieldDef.max) {
         throw new Error(`Use no more than ${fieldDef.max} social links.`);
+      }
+      if (
+        socials.some(
+          ({ label, url, handle }) =>
+            label.length > 40 ||
+            url.length > 2048 ||
+            handle.length > 120 ||
+            (!/^https:\/\//i.test(url) && !/^mailto:/i.test(url)),
+        )
+      ) {
+        throw new Error(
+          "Social links need a label, an HTTPS or mailto URL, and a handle of 120 characters or fewer.",
+        );
       }
       writeNested(values, fieldDef.name, socials);
     } else if (fieldDef.type !== "asset") {
@@ -233,6 +267,9 @@ export async function saveContentRecord(sectionId, form, currentContent) {
         throw new Error(
           `${fieldDef.label} must be ${fieldDef.max} characters or shorter.`,
         );
+      }
+      if (fieldDef.type === "url" && value && !/^https:\/\//i.test(value)) {
+        throw new Error(`${fieldDef.label} must use an HTTPS URL.`);
       }
       writeNested(values, fieldDef.name, value);
     } else {
@@ -254,6 +291,9 @@ export async function saveContentRecord(sectionId, form, currentContent) {
     : Number(formData.get("order")) ||
       existing?.order ||
       currentRows.length + 1;
+  if (!Number.isInteger(order) || order < 1 || order > 10000) {
+    throw new Error("Display order must be a whole number from 1 to 10000.");
+  }
   const isPublished =
     sectionId === "settings" || formData.get("isPublished") === "on";
   values.order = order;
@@ -264,7 +304,8 @@ export async function saveContentRecord(sectionId, form, currentContent) {
       ? existing.managedSections
       : [];
   }
-  if (existing?.createdAt) values.createdAt = existing.createdAt;
+  if (existing?.createdAt)
+    values.createdAt = toFirestoreTimestamp(existing.createdAt);
   else values.createdAt = serverTimestamp();
   values.updatedAt = serverTimestamp();
 
@@ -295,6 +336,11 @@ export async function saveContentRecord(sectionId, form, currentContent) {
       );
     }
     const url = values[fieldDef.name];
+    if (url && url.length > 2048) {
+      throw new Error(
+        `${fieldDef.label} URL must be 2048 characters or shorter.`,
+      );
+    }
     if (url && !url.startsWith("/assets/") && !/^https:\/\//i.test(url)) {
       throw new Error(
         `${fieldDef.label} must be an HTTPS URL or a local /assets/ path.`,

@@ -211,7 +211,7 @@ service cloud.firestore {
         && validTextList(data.highlights, 12, 220)
         && data.featured is bool
         && validProjectLinks(data.links)
-        && optionalUrl(data, 'coverImage', false)
+        && optionalUrl(data, 'coverImage', true)
         && optionalText(data, 'coverImageAlt', 180);
     }
 
@@ -290,7 +290,7 @@ service cloud.firestore {
         && optionalText(data, 'issuedAt', 60)
         && optionalText(data, 'description', 1200)
         && optionalUrl(data, 'url', false)
-        && optionalUrl(data, 'documentUrl', false);
+        && optionalUrl(data, 'documentUrl', true);
     }
 
     function validWorkshop(data) {
@@ -309,7 +309,7 @@ service cloud.firestore {
         && optionalText(data, 'location', 140)
         && optionalText(data, 'description', 1200)
         && optionalUrl(data, 'url', false)
-        && optionalUrl(data, 'documentUrl', false);
+        && optionalUrl(data, 'documentUrl', true);
     }
 
     function validBlogTags(tags) {

@@ -38,7 +38,7 @@ Collection records use `isPublished` and numeric `order`. Some existing document
 
 - Public portfolio collection reads use Enterprise pipelines with `where(isPublished == true)` followed by `sort(order ascending)`.
 - Admin reads use Enterprise pipelines over the same named collections and Firestore Lite reads for the two singleton records. Lite avoids the Core SDK transport failure that reported this browser as offline.
-- Admin writes use one `setDoc` per content entry, matching the working blog save path; ordering remains a batch because it updates multiple records. `settings/public.managedSections` is written separately only when a section has no published entries, so it cannot make ordinary profile, project, experience, education, skill, or credential saves fail as a side effect. Blog uploads and content uploads use Firebase Storage download URLs.
+- Admin writes use one `setDoc` per content entry, matching the working blog save path; ordering remains a batch because it updates multiple records. `saveContentRecord` builds a schema-only payload, checks URL/list/order constraints before writing, and converts Lite SDK timestamps to the Core SDK `Timestamp` type when preserving `createdAt`. `settings/public.managedSections` is written separately only when a section has no published entries, so it cannot make ordinary profile, project, experience, education, skill, or credential saves fail as a side effect. Blog uploads and content uploads use Firebase Storage download URLs.
 - Project links and cover images continue to feed the existing project card/detail renderers. Profile fields feed the home, about, header, footer, and contact views.
 
 ## Storage paths
@@ -57,7 +57,7 @@ The Firebase rules were reviewed against all Firestore and Storage call sites in
 | Surface | Public access | Admin access | Guardrails |
 | --- | --- | --- | --- |
 | Profile and settings | Read the published singleton document | Read and write only for the verified owner email | Strict allowed-field lists, type/length limits, HTTPS or local asset URLs, `order` range |
-| Portfolio collections | Read published entries; public queries must filter `isPublished == true` | Read, create, update, and delete | Per-collection schema checks, bounded lists/text, URL validation, publication boolean, order range |
+| Portfolio collections | Read published entries; public queries must filter `isPublished == true` | Read, create, update, and delete | Per-collection schema checks, bounded lists/text, HTTPS URLs or `/assets/` paths for asset fields, publication boolean, order range |
 | Blog | Read published entries | Read and manage drafts and published entries | Existing Markdown limits and tag bounds, slug format, timestamp and order checks |
 | Storage | Public reads for assets linked from public pages | Upload, replace, and delete only for the verified owner | Content-type allowlists and maximum sizes by folder |
 
